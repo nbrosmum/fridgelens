@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +16,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'FridgeLens',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -32,8 +34,9 @@ class MyApp extends StatelessWidget {
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'FridgeLens Firebase Test'),
     );
   }
 }
@@ -57,17 +60,92 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  String _authStatus = 'Not tested';
+  String _firestoreStatus = 'Not tested';
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  void _incrementCounter() {
+  // Test user credentials - replace with your test user if needed
+  final String _testEmail = 'test@example.com';
+  final String _testPassword = 'Test123!';
+
+  Future<void> _testFirebaseAuth() async {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _authStatus = 'Testing Auth...';
     });
+
+    try {
+      // Try to create a test user
+      try {
+        await _auth.createUserWithEmailAndPassword(
+          email: _testEmail,
+          password: _testPassword,
+        );
+        setState(() {
+          _authStatus = 'User created successfully!';
+        });
+      } catch (e) {
+        // If user already exists, try to sign in
+        if (e is FirebaseAuthException && e.code == 'email-already-in-use') {
+          try {
+            await _auth.signInWithEmailAndPassword(
+              email: _testEmail,
+              password: _testPassword,
+            );
+            setState(() {
+              _authStatus = 'User signed in successfully!';
+            });
+          } catch (signInError) {
+            setState(() {
+              _authStatus = 'Auth Error: ${signInError.toString()}';
+            });
+          }
+        } else {
+          setState(() {
+            _authStatus = 'Auth Error: ${e.toString()}';
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _authStatus = 'Auth Error: ${e.toString()}';
+      });
+    }
+  }
+
+  Future<void> _testFirestore() async {
+    setState(() {
+      _firestoreStatus = 'Testing Firestore...';
+    });
+
+    try {
+      // Add a test document to Firestore
+      await _firestore.collection('test').doc('test_doc').set({
+        'timestamp': DateTime.now().toString(),
+        'message': 'FridgeLens test connection',
+      });
+
+      // Read the document back to verify
+      final docSnapshot = await _firestore
+          .collection('test')
+          .doc('test_doc')
+          .get();
+
+      if (docSnapshot.exists) {
+        setState(() {
+          _firestoreStatus =
+              'Firestore connected successfully!\nData: ${docSnapshot.data()}';
+        });
+      } else {
+        setState(() {
+          _firestoreStatus = 'Firestore Error: Document does not exist';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _firestoreStatus = 'Firestore Error: ${e.toString()}';
+      });
+    }
   }
 
   @override
@@ -91,35 +169,95 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            // Column is also a layout widget. It takes a list of children and
+            // arranges them vertically. By default, it sizes itself to fit its
+            // children horizontally, and tries to be as tall as its parent.
+            //
+            // Column has various properties to control how it sizes itself and
+            // how it positions its children. Here we use mainAxisAlignment to
+            // center the children vertically; the main axis here is the vertical
+            // axis because Columns are vertical (the cross axis would be
+            // horizontal).
+            //
+            // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
+            // action in the IDE, or press "p" in the console), to see the
+            // wireframe for each widget.
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Image.asset('assets/logo.png', height: 120),
+              const SizedBox(height: 30),
+
+              const Text(
+                'Test Firebase Authentication:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _testFirebaseAuth,
+                child: const Text('Test Auth'),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _authStatus.contains('successfully')
+                      ? Colors.green.withOpacity(0.1)
+                      : _authStatus.contains('Error')
+                      ? Colors.red.withOpacity(0.1)
+                      : Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _authStatus,
+                  style: TextStyle(
+                    color: _authStatus.contains('successfully')
+                        ? Colors.green
+                        : _authStatus.contains('Error')
+                        ? Colors.red
+                        : Colors.black,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+              const Text(
+                'Test Firestore Database:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _testFirestore,
+                child: const Text('Test Firestore'),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: _firestoreStatus.contains('successfully')
+                      ? Colors.green.withOpacity(0.1)
+                      : _firestoreStatus.contains('Error')
+                      ? Colors.red.withOpacity(0.1)
+                      : Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  _firestoreStatus,
+                  style: TextStyle(
+                    color: _firestoreStatus.contains('successfully')
+                        ? Colors.green
+                        : _firestoreStatus.contains('Error')
+                        ? Colors.red
+                        : Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
