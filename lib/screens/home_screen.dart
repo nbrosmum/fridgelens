@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/auth_service.dart';
+import '../utils/constants.dart';
+import '../widgets/home/app_header.dart';
+import 'change_password_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,6 +14,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final AuthService _authService = AuthService();
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -26,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _signOut() async {
-    await FirebaseAuth.instance.signOut();
+    await _authService.signOut();
   }
 
   @override
@@ -53,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
             currentIndex: _selectedIndex,
             onTap: _onItemTapped,
             backgroundColor: Colors.white,
-            selectedItemColor: const Color(0xFF5409DA),
+            selectedItemColor: AppColors.primary,
             unselectedItemColor: Colors.grey[400],
             selectedLabelStyle: const TextStyle(
               fontWeight: FontWeight.bold,
@@ -77,22 +81,22 @@ class _HomeScreenState extends State<HomeScreen> {
               BottomNavigationBarItem(
                 icon: Padding(
                   padding: EdgeInsets.only(bottom: 4),
-                  child: FaIcon(FontAwesomeIcons.boxArchive, size: 20),
+                  child: Icon(Icons.kitchen_outlined, size: 24),
                 ),
                 activeIcon: Padding(
                   padding: EdgeInsets.only(bottom: 4),
-                  child: FaIcon(FontAwesomeIcons.boxArchive, size: 20),
+                  child: Icon(Icons.kitchen, size: 24),
                 ),
                 label: 'Fridge',
               ),
               BottomNavigationBarItem(
                 icon: Padding(
                   padding: EdgeInsets.only(bottom: 4),
-                  child: FaIcon(FontAwesomeIcons.clipboardList, size: 20),
+                  child: Icon(Icons.shopping_cart_outlined, size: 24),
                 ),
                 activeIcon: Padding(
                   padding: EdgeInsets.only(bottom: 4),
-                  child: FaIcon(FontAwesomeIcons.clipboardList, size: 20),
+                  child: Icon(Icons.shopping_cart, size: 24),
                 ),
                 label: 'Shopping',
               ),
@@ -124,63 +128,13 @@ class HomeTab extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF5409DA).withOpacity(0.7),
-                    const Color(0xFF4E71FF).withOpacity(0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Image.asset('assets/logo.png'),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            ShaderMask(
-              shaderCallback: (bounds) => LinearGradient(
-                colors: [const Color(0xFF5409DA), const Color(0xFF4E71FF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ).createShader(bounds),
-              child: const Text(
-                'FridgeLens',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
-        ),
+      appBar: const AppHeader(
+        title: AppStrings.appName,
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined),
-            color: const Color(0xFF5409DA),
+            onPressed: null,
+            icon: Icon(Icons.notifications_outlined),
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -210,7 +164,7 @@ class HomeTab extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF5409DA),
+                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -241,7 +195,7 @@ class FridgeTab extends StatelessWidget {
         title: const Text(
           'My Fridge',
           style: TextStyle(
-            color: Color(0xFF5409DA),
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -249,12 +203,12 @@ class FridgeTab extends StatelessWidget {
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.search),
-            color: const Color(0xFF5409DA),
+            color: AppColors.primary,
           ),
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.filter_list),
-            color: const Color(0xFF5409DA),
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -263,7 +217,7 @@ class FridgeTab extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        backgroundColor: const Color(0xFF5409DA),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add),
       ),
     );
@@ -283,7 +237,7 @@ class ShoppingListTab extends StatelessWidget {
         title: const Text(
           'Shopping List',
           style: TextStyle(
-            color: Color(0xFF5409DA),
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -291,7 +245,7 @@ class ShoppingListTab extends StatelessWidget {
           IconButton(
             onPressed: () {},
             icon: const Icon(Icons.more_vert),
-            color: const Color(0xFF5409DA),
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -300,7 +254,7 @@ class ShoppingListTab extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
-        backgroundColor: const Color(0xFF5409DA),
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.add_shopping_cart),
       ),
     );
@@ -313,6 +267,7 @@ class ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
+    final AuthService authService = AuthService();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -322,17 +277,17 @@ class ProfileTab extends StatelessWidget {
         title: const Text(
           'My Profile',
           style: TextStyle(
-            color: Color(0xFF5409DA),
+            color: AppColors.primary,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
+              await authService.signOut();
             },
             icon: const Icon(Icons.logout),
-            color: const Color(0xFF5409DA),
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -342,11 +297,11 @@ class ProfileTab extends StatelessWidget {
             const SizedBox(height: 30),
             CircleAvatar(
               radius: 50,
-              backgroundColor: const Color(0xFF4E71FF).withOpacity(0.1),
+              backgroundColor: AppColors.secondary.withOpacity(0.1),
               child: const Icon(
                 Icons.person,
                 size: 50,
-                color: Color(0xFF4E71FF),
+                color: AppColors.secondary,
               ),
             ),
             const SizedBox(height: 20),
@@ -355,7 +310,7 @@ class ProfileTab extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF5409DA),
+                color: AppColors.primary,
               ),
             ),
             Text(
@@ -371,14 +326,21 @@ class ProfileTab extends StatelessWidget {
             ),
             _buildProfileOption(
               context,
-              Icons.settings_outlined,
-              'Settings',
-              onTap: () {},
+              Icons.lock_outline,
+              'Change Password',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChangePasswordScreen(),
+                  ),
+                );
+              },
             ),
             _buildProfileOption(
               context,
-              Icons.info_outline,
-              'About',
+              Icons.settings_outlined,
+              'Settings',
               onTap: () {},
             ),
           ],
@@ -413,7 +375,7 @@ class ProfileTab extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: const Color(0xFF4E71FF), size: 24),
+              Icon(icon, color: AppColors.secondary, size: 24),
               const SizedBox(width: 16),
               Text(
                 title,

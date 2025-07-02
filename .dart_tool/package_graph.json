@@ -16,7 +16,6 @@
         "flutter_launcher_icons",
         "flutter_local_notifications",
         "flutter_svg",
-        "font_awesome_flutter",
         "image_picker",
         "tflite_flutter"
       ],
@@ -58,13 +57,6 @@
         "test_api",
         "vector_math",
         "vm_service"
-      ]
-    },
-    {
-      "name": "font_awesome_flutter",
-      "version": "10.8.0",
-      "dependencies": [
-        "flutter"
       ]
     },
     {

@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'utils/constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +17,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'FridgeLens',
+      title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF5409DA),
-          primary: const Color(0xFF5409DA),
-          secondary: const Color(0xFF4E71FF),
-          tertiary: const Color(0xFF8DD8FF),
+          seedColor: AppColors.primary,
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          tertiary: AppColors.tertiary,
         ),
         useMaterial3: true,
       ),
