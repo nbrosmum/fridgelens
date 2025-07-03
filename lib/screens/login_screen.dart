@@ -18,6 +18,25 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  @override
+  void initState() {
+    super.initState();
+    // Ensure we're starting with a clean auth state
+    _checkAndClearAuthState();
+  }
+
+  Future<void> _checkAndClearAuthState() async {
+    // Check if there's any lingering auth state and clear it if needed
+    if (FirebaseAuth.instance.currentUser != null) {
+      try {
+        await _authService.signOut();
+        print('Cleared existing auth state on login screen init');
+      } catch (e) {
+        print('Error clearing auth state: $e');
+      }
+    }
+  }
+
   Future<void> _signInWithEmailAndPassword(
     String email,
     String password,
@@ -32,18 +51,44 @@ class _LoginScreenState extends State<LoginScreen> {
         email,
         password,
       );
-      if (user == null && mounted) {
+
+      // Debug print to see if we're getting a user back
+      print('Login attempt result: ${user != null ? 'Success' : 'Failed'}');
+      if (user != null) {
+        print('Successfully logged in user: ${user.uid}');
+
+        // Navigate to home screen on successful login
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/home');
+        }
+      } else if (mounted) {
         setState(() {
           _errorMessage = 'Invalid email or password';
         });
       }
     } on FirebaseAuthException catch (e) {
+      print('Firebase Auth Exception during login: ${e.code} - ${e.message}');
       if (mounted) {
+        String errorMsg = 'An error occurred during sign in';
+
+        // Provide more specific error messages
+        if (e.code == 'wrong-password') {
+          errorMsg = 'Incorrect password. Please try again.';
+        } else if (e.code == 'user-not-found') {
+          errorMsg = 'No account found with this email.';
+        } else if (e.code == 'invalid-credential') {
+          errorMsg =
+              'Invalid login credentials. Please check your email and password.';
+        } else if (e.message != null) {
+          errorMsg = e.message!;
+        }
+
         setState(() {
-          _errorMessage = e.message ?? 'An error occurred during sign in';
+          _errorMessage = errorMsg;
         });
       }
     } catch (e) {
+      print('Unexpected error during login: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'An unexpected error occurred';

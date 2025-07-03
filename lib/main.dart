@@ -3,11 +3,33 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/register_screen.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/change_password_screen.dart';
 import 'utils/constants.dart';
+import 'services/auth_service.dart';
+
+// Global instance of AuthService for persistence
+final AuthService authService = AuthService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+
+  try {
+    // Initialize Firebase
+    await Firebase.initializeApp();
+
+    // Set persistence mode to LOCAL
+    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+
+    // Initialize auth service after Firebase
+    print(
+      'Firebase initialized, current user: ${FirebaseAuth.instance.currentUser?.uid ?? 'None'}',
+    );
+  } catch (e) {
+    print('Error during Firebase initialization: $e');
+  }
+
   runApp(const MyApp());
 }
 
@@ -28,18 +50,63 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData && snapshot.data != null) {
-            return const HomeScreen();
-          }
+      // Define named routes
+      routes: {
+        '/': (context) => const AuthWrapper(),
+        '/home': (context) => const HomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/forgot_password': (context) => const ForgotPasswordScreen(),
+        '/change_password': (context) => const ChangePasswordScreen(),
+      },
+      initialRoute: '/',
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        // Debug print to track auth state changes
+        print(
+          'Auth state changed: ${snapshot.hasData ? 'User authenticated' : 'User not authenticated'}',
+        );
+
+        // Check for error in authentication state
+        if (snapshot.hasError) {
+          print('Auth state error: ${snapshot.error}');
           return const LoginScreen();
-        },
-      ),
+        }
+
+        if (snapshot.hasData && snapshot.data != null) {
+          print('User authenticated: ID=${snapshot.data!.uid}');
+
+          // Extra validation to ensure user is really authenticated
+          if (FirebaseAuth.instance.currentUser != null) {
+            print(
+              'Current user matches stream: ${FirebaseAuth.instance.currentUser!.uid}',
+            );
+            return const HomeScreen();
+          } else {
+            print('WARNING: Stream has user but currentUser is null');
+          }
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Default to login screen
+        print('No authenticated user, showing login screen');
+        return const LoginScreen();
+      },
     );
   }
 }

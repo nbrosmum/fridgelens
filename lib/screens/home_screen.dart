@@ -14,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final AuthService _authService = AuthService();
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -27,10 +26,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _signOut() async {
-    await _authService.signOut();
   }
 
   @override
@@ -218,6 +213,7 @@ class FridgeTab extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: AppColors.primary,
+        heroTag: 'fridgeAddBtn',
         child: const Icon(Icons.add),
       ),
     );
@@ -255,6 +251,7 @@ class ShoppingListTab extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: AppColors.primary,
+        heroTag: 'shoppingAddBtn',
         child: const Icon(Icons.add_shopping_cart),
       ),
     );
@@ -284,7 +281,23 @@ class ProfileTab extends StatelessWidget {
         actions: [
           IconButton(
             onPressed: () async {
-              await authService.signOut();
+              try {
+                await authService.signOut();
+                print('Logout successful from ProfileTab');
+
+                // Use Navigator to go to login screen after logout
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/login', (route) => false);
+              } catch (e) {
+                print('Error during logout: $e');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Logout failed: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             icon: const Icon(Icons.logout),
             color: AppColors.primary,

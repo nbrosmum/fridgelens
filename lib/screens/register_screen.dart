@@ -37,7 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           setState(() {
             _isLoading = false;
             _errorMessage =
-                'Email already in use. Please use a different email.';
+                'This email address is already registered. Please use a different email or try logging in.';
           });
           return;
         }
@@ -61,8 +61,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         });
       }
     } on FirebaseAuthException catch (e) {
+      String errorMsg = 'An error occurred during registration';
+
+      // Handle specific Firebase error codes
+      if (e.code == 'email-already-in-use') {
+        errorMsg =
+            'This email address is already registered. Please use a different email.';
+      } else if (e.message != null) {
+        errorMsg = e.message!;
+      }
+
       setState(() {
-        _errorMessage = e.message ?? 'An error occurred during registration';
+        _errorMessage = errorMsg;
       });
     } catch (e) {
       setState(() {
