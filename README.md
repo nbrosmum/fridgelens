@@ -6,17 +6,18 @@ Final Year Project  - APU assignment
 FridgeLens is a mobile application that helps users manage household food inventory and reduce food waste. Using image recognition, the app allows users to quickly scan and add food items, track expiry dates, and share inventory with other users — improving household food management and supporting Sustainable Development Goal (SDG) 12: Responsible Consumption and Production.
 
 Features
-    Image Recognition to detect and add food items
 
-    Manual food entry option for accuracy
+Image Recognition to detect and add food items
 
-    Expiry Date Notifications to reduce food waste
+Manual food entry option for accuracy
 
-    Shared Inventory — collaborate with family/housemates
+Expiry Date Notifications to reduce food waste
 
-    Basic Reports on food consumption & wastage
+Shared Inventory — collaborate with family/housemates
 
-    Built with Flutter — optimized for Android
+Basic Reports on food consumption & wastage
+
+Built with Flutter — optimized for Android
 
 Tech Stack
 Frontend: Flutter (Dart)
@@ -29,28 +30,28 @@ Operating System: Android
 
 Methodology: Agile (Kanban)
 
-🚀 Getting Started
+Getting Started
 
 Clone the repository:
 
 bash
 
-git clone https://github.com/nbrosmum/fridgelens.git
+`git clone https://github.com/nbrosmum/fridgelens.git`
 
 Navigate to the project directory:
 
 bash
 
-cd fridgelens
+`cd fridgelens`
 
 Install dependencies
 
 bash
 
-flutter pub get
+`flutter pub get`
 
 Run the app on an Android device or emulator:
 
 bash
 
-flutter run
+`flutter run`
