@@ -36,22 +36,22 @@ Clone the repository:
 
 bash
 
-`git clone https://github.com/nbrosmum/fridgelens.git`
+``git clone https://github.com/nbrosmum/fridgelens.git``
 
 Navigate to the project directory:
 
 bash
 
-`cd fridgelens`
+``cd fridgelens``
 
 Install dependencies
 
 bash
 
-`flutter pub get`
+``flutter pub get``
 
 Run the app on an Android device or emulator:
 
 bash
 
-`flutter run`
+``flutter run``
