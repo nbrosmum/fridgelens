@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    
+    // Allow users to read and write their own shopping list
+    match /shopping_lists/{itemId} {
+      // For creating new documents, we can't check resource.data.userId because it doesn't exist yet
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // For reading, updating, and deleting, we check the existing document's userId
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Test collection - allow access for testing purposes
+    match /test/{document=**} {
+      allow read, write: if true;
+    }
+  }
+} 

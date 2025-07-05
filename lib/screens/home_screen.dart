@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/shopping_service.dart';
 import '../utils/constants.dart';
+import '../utils/category_icons.dart';
 import '../widgets/home/app_header.dart';
+import '../widgets/shopping/shopping_item_tile.dart';
+import '../widgets/shopping/add_shopping_item_dialog.dart';
+import '../widgets/shopping/empty_shopping_list.dart';
+import '../models/shopping_item_model.dart';
 import 'change_password_screen.dart';
 import 'settings_screen.dart';
 
@@ -221,8 +227,16 @@ class FridgeTab extends StatelessWidget {
   }
 }
 
-class ShoppingListTab extends StatelessWidget {
+class ShoppingListTab extends StatefulWidget {
   const ShoppingListTab({super.key});
+
+  @override
+  State<ShoppingListTab> createState() => _ShoppingListTabState();
+}
+
+class _ShoppingListTabState extends State<ShoppingListTab> {
+  final ShoppingService _shoppingService = ShoppingService();
+  bool _showCompleted = true;
 
   @override
   Widget build(BuildContext context) {
@@ -240,20 +254,361 @@ class ShoppingListTab extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.more_vert),
-            color: AppColors.primary,
+            onPressed: () {
+              setState(() {
+                _showCompleted = !_showCompleted;
+              });
+            },
+            icon: Icon(
+              _showCompleted ? Icons.check_circle_outline : Icons.check_circle,
+              color: AppColors.primary,
+            ),
+            tooltip: _showCompleted ? 'Hide Completed' : 'Show Completed',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'clear_completed') {
+                _showClearCompletedDialog();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'clear_completed',
+                child: Row(
+                  children: [
+                    Icon(Icons.cleaning_services_outlined, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Clear Completed Items'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      body: const Center(
-        child: Text('Shopping List', style: TextStyle(fontSize: 24)),
+      body: StreamBuilder<List<ShoppingItem>>(
+        stream: _shoppingService.getShoppingItems(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Failed to load: ${snapshot.error}'));
+          }
+
+          final items = snapshot.data ?? [];
+
+          // Filter out completed items if not showing completed
+          final filteredItems = _showCompleted
+              ? items
+              : items.where((item) => !item.isCompleted).toList();
+
+          if (filteredItems.isEmpty) {
+            return EmptyShoppingList(onAddItem: _showAddItemDialog);
+          }
+
+          // Group by category
+          final Map<String, List<ShoppingItem>> categorizedItems = {};
+          for (var item in filteredItems) {
+            if (!categorizedItems.containsKey(item.category)) {
+              categorizedItems[item.category] = [];
+            }
+            categorizedItems[item.category]!.add(item);
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.only(top: 16, bottom: 80),
+            itemCount: categorizedItems.length,
+            itemBuilder: (context, index) {
+              final category = categorizedItems.keys.elementAt(index);
+              final categoryItems = categorizedItems[category]!;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: CategoryIcons.getColorForCategory(
+                        category,
+                      ).withAlpha(30),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          CategoryIcons.getIconForCategory(category),
+                          color: CategoryIcons.getColorForCategory(category),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: CategoryIcons.getColorForCategory(category),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: CategoryIcons.getColorForCategory(
+                              category,
+                            ).withAlpha(80),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${categoryItems.length}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: CategoryIcons.getColorForCategory(
+                                category,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ...categoryItems.map(
+                    (item) => ShoppingItemTile(
+                      item: item,
+                      onToggle: (value) {
+                        _shoppingService.toggleItemCompletion(item);
+                      },
+                      onDelete: () async {
+                        try {
+                          await _shoppingService.deleteShoppingItem(item.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.delete, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text('${item.name} deleted'),
+                                ],
+                              ),
+                              backgroundColor: Colors.red[700],
+                              action: SnackBarAction(
+                                label: 'Undo',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  _shoppingService.addShoppingItem(
+                                    name: item.name,
+                                    quantity: item.quantity,
+                                    category: item.category,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.error, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text('Failed to delete item: $e'),
+                                ],
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      onEdit: () {
+                        _showEditItemDialog(item);
+                      },
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _showAddItemDialog,
         backgroundColor: AppColors.primary,
         heroTag: 'shoppingAddBtn',
         child: const Icon(Icons.add_shopping_cart),
+      ),
+    );
+  }
+
+  void _showAddItemDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AddShoppingItemDialog(
+        onAdd: (name, quantity, category) async {
+          try {
+            print('Dialog: Adding item $name, $quantity, category: $category');
+            await _shoppingService.addShoppingItem(
+              name: name,
+              quantity: quantity,
+              category: category,
+            );
+            print('Dialog: Item added successfully');
+
+            // Show success message with green background
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text('$name added to shopping list'),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            print('Dialog: Error adding item: $e');
+
+            // Show error message with red background
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text('Failed to add item: $e'),
+                    ],
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _showEditItemDialog(ShoppingItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AddShoppingItemDialog(
+        isEditing: true,
+        initialName: item.name,
+        initialQuantity: item.quantity,
+        initialCategory: item.category,
+        onAdd: (name, quantity, category) async {
+          try {
+            final updatedItem = item.copyWith(
+              name: name,
+              quantity: quantity,
+              category: category,
+            );
+            await _shoppingService.updateShoppingItem(updatedItem);
+
+            // Show success message with green background
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text('$name updated successfully'),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          } catch (e) {
+            // Show error message with red background
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(Icons.error, color: Colors.white),
+                      const SizedBox(width: 8),
+                      Text('Failed to update item: $e'),
+                    ],
+                  ),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  void _showClearCompletedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Completed Items'),
+        content: const Text(
+          'Are you sure you want to delete all completed items? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _shoppingService.clearCompletedItems();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: const [
+                        Icon(Icons.cleaning_services, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('All completed items cleared'),
+                      ],
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.error, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text('Failed to clear items: $e'),
+                      ],
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Clear'),
+          ),
+        ],
       ),
     );
   }
