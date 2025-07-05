@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/profile/change_password_form.dart';
-import '../screens/login_screen.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});

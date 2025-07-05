@@ -81,10 +81,10 @@ class AuthService {
       return _userFromFirebaseUser(user);
     } on FirebaseAuthException catch (e) {
       print('Error registering: ${e.code} - ${e.message}');
-      throw e; // Re-throw to be handled by the UI
+      rethrow; // Re-throw to be handled by the UI
     } catch (e) {
       print('Error registering: $e');
-      throw e; // Re-throw to be handled by the UI
+      rethrow; // Re-throw to be handled by the UI
     }
   }
 
