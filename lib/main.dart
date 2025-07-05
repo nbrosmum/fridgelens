@@ -6,6 +6,7 @@ import 'screens/home_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/change_password_screen.dart';
+import 'screens/edit_profile_screen.dart';
 import 'utils/constants.dart';
 import 'services/auth_service.dart';
 
@@ -58,6 +59,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/forgot_password': (context) => const ForgotPasswordScreen(),
         '/change_password': (context) => const ChangePasswordScreen(),
+        '/edit_profile': (context) => const EditProfileScreen(),
       },
       initialRoute: '/',
     );

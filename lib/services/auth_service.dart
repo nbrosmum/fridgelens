@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Constructor to set persistence
   AuthService() {
@@ -29,8 +31,66 @@ class AuthService {
       uid: user.uid,
       email: user.email ?? '',
       displayName: user.displayName,
-      photoURL: user.photoURL,
     );
+  }
+
+  // Get user data from Firestore
+  Future<UserModel?> getUserData() async {
+    try {
+      if (_auth.currentUser == null) return null;
+
+      DocumentSnapshot doc = await _firestore
+          .collection('users')
+          .doc(_auth.currentUser!.uid)
+          .get();
+
+      if (doc.exists) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return UserModel.fromMap({
+          'uid': _auth.currentUser!.uid,
+          'email': _auth.currentUser!.email ?? '',
+          'displayName': _auth.currentUser!.displayName,
+          'phoneNumber': data['phoneNumber'],
+          'dateOfBirth': data['dateOfBirth'],
+        });
+      } else {
+        return _userFromFirebaseUser(_auth.currentUser);
+      }
+    } catch (e) {
+      print('Error getting user data: $e');
+      return _userFromFirebaseUser(_auth.currentUser);
+    }
+  }
+
+  // Update user profile
+  Future<bool> updateUserProfile({
+    String? displayName,
+    String? phoneNumber,
+    String? dateOfBirth,
+  }) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return false;
+
+      // Update display name in Firebase Auth if provided
+      if (displayName != null && displayName.isNotEmpty) {
+        await user.updateDisplayName(displayName);
+      }
+
+      // Update additional fields in Firestore
+      await _firestore.collection('users').doc(user.uid).set({
+        'displayName': displayName ?? user.displayName,
+        'phoneNumber': phoneNumber,
+        'dateOfBirth': dateOfBirth,
+        'email': user.email,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      return true;
+    } catch (e) {
+      print('Error updating user profile: $e');
+      return false;
+    }
   }
 
   // Sign in with email and password
@@ -45,7 +105,23 @@ class AuthService {
       );
       User? user = result.user;
       print('User signed in with persistence: ${user?.uid}');
-      return _userFromFirebaseUser(user);
+
+      // Check if user exists in Firestore, if not create a record
+      if (user != null) {
+        DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (!userDoc.exists) {
+          await _firestore.collection('users').doc(user.uid).set({
+            'email': user.email,
+            'displayName': user.displayName,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
+
+      return await getUserData();
     } catch (e) {
       print('Error signing in: $e');
       rethrow; // Re-throw to be handled by the UI
@@ -77,6 +153,15 @@ class AuthService {
 
       // Update display name
       await user?.updateDisplayName(name);
+
+      // Create a new document for the user in Firestore
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'email': email,
+          'displayName': name,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
 
       return _userFromFirebaseUser(user);
     } on FirebaseAuthException catch (e) {

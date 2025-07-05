@@ -258,13 +258,40 @@ class ShoppingListTab extends StatelessWidget {
   }
 }
 
-class ProfileTab extends StatelessWidget {
+class ProfileTab extends StatefulWidget {
   const ProfileTab({super.key});
+
+  @override
+  State<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<ProfileTab> {
+  final AuthService _authService = AuthService();
+  bool _showProfileUpdateReminder = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkProfileCompletion();
+  }
+
+  Future<void> _checkProfileCompletion() async {
+    final userData = await _authService.getUserData();
+    if (mounted) {
+      setState(() {
+        // Check if phone number or date of birth is empty
+        _showProfileUpdateReminder =
+            userData?.phoneNumber == null ||
+            userData?.phoneNumber?.isEmpty == true ||
+            userData?.dateOfBirth == null ||
+            userData?.dateOfBirth?.isEmpty == true;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
-    final AuthService authService = AuthService();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -282,7 +309,7 @@ class ProfileTab extends StatelessWidget {
           IconButton(
             onPressed: () async {
               try {
-                await authService.signOut();
+                await _authService.signOut();
                 print('Logout successful from ProfileTab');
 
                 // Use Navigator to go to login screen after logout
@@ -326,16 +353,63 @@ class ProfileTab extends StatelessWidget {
                 color: AppColors.primary,
               ),
             ),
-            Text(
-              user?.email ?? 'No email',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.email_outlined, size: 16, color: Colors.grey),
+                const SizedBox(width: 5),
+                Text(
+                  user?.email ?? 'No email',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+              ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
+
+            // 显示个人资料更新提醒
+            if (_showProfileUpdateReminder)
+              Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.amber[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.amber),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.amber),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Please complete your profile information',
+                        style: TextStyle(color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 20),
             _buildProfileOption(
               context,
               Icons.person_outline,
               'Edit Profile',
-              onTap: () {},
+              showBadge: _showProfileUpdateReminder,
+              onTap: () async {
+                final result = await Navigator.pushNamed(
+                  context,
+                  '/edit_profile',
+                );
+                if (result == true) {
+                  // Check profile completion status after update
+                  _checkProfileCompletion();
+                }
+              },
             ),
             _buildProfileOption(
               context,
@@ -367,6 +441,7 @@ class ProfileTab extends StatelessWidget {
     IconData icon,
     String title, {
     required VoidCallback onTap,
+    bool showBadge = false,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -388,7 +463,24 @@ class ProfileTab extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(icon, color: AppColors.secondary, size: 24),
+              Stack(
+                children: [
+                  Icon(icon, color: AppColors.secondary, size: 24),
+                  if (showBadge)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(width: 16),
               Text(
                 title,
