@@ -52,9 +52,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         name,
       );
 
-      // Navigate back to login page
+      // Show success message and navigate back to login page
       if (user != null && mounted) {
-        Navigator.pop(context);
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Please log in.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Wait a moment for the user to see the message
+        await Future.delayed(const Duration(seconds: 1));
+
+        // Navigate back to login page
+        if (mounted) {
+          Navigator.pop(context);
+        }
       } else if (mounted) {
         setState(() {
           _errorMessage = 'Failed to create account. Please try again.';

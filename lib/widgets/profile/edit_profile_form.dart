@@ -128,7 +128,10 @@ class _EditProfileFormState extends State<EditProfileForm> {
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile updated successfully')),
+            const SnackBar(
+              content: Text('Profile updated successfully'),
+              backgroundColor: Colors.green,
+            ),
           );
           Navigator.pop(
             context,
@@ -138,7 +141,10 @@ class _EditProfileFormState extends State<EditProfileForm> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to update profile')),
+            const SnackBar(
+              content: Text('Failed to update profile'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       }
@@ -146,7 +152,10 @@ class _EditProfileFormState extends State<EditProfileForm> {
       print('Error updating profile: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update profile')),
+          const SnackBar(
+            content: Text('Failed to update profile'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

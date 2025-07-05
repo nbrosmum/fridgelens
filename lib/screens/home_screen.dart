@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/home/app_header.dart';
 import 'change_password_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -428,7 +429,14 @@ class _ProfileTabState extends State<ProfileTab> {
               context,
               Icons.settings_outlined,
               'Settings',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),

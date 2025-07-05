@@ -251,4 +251,67 @@ class AuthService {
       rethrow; // Re-throw to be handled by UI
     }
   }
+
+  // Delete user account
+  Future<bool> deleteAccount() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) return false;
+
+      String uid = user.uid;
+
+      // First delete the user data from Firestore
+      await _firestore.collection('users').doc(uid).delete();
+
+      // Then delete the user from Firebase Auth
+      await user.delete();
+
+      print('User account and data deleted successfully');
+      return true;
+    } on FirebaseAuthException catch (e) {
+      // This might happen if the user needs to be re-authenticated
+      print('Firebase error deleting account: ${e.code} - ${e.message}');
+      if (e.code == 'requires-recent-login') {
+        // User needs to re-authenticate before deleting account
+        print('User needs to re-authenticate before deleting account');
+      }
+      rethrow;
+    } catch (e) {
+      print('Error deleting account: $e');
+      return false;
+    }
+  }
+
+  // Delete user account with re-authentication
+  Future<bool> deleteAccountWithPassword(String password) async {
+    try {
+      // First re-authenticate the user
+      bool isAuthenticated = await reauthenticateUser(password);
+      if (!isAuthenticated) {
+        print('Failed to re-authenticate user');
+        return false;
+      }
+
+      User? user = _auth.currentUser;
+      if (user == null) return false;
+
+      String uid = user.uid;
+
+      // Delete user data from Firestore
+      await _firestore.collection('users').doc(uid).delete();
+
+      // Delete any other collections related to this user
+      // For example, if you have user-specific collections:
+      // await _deleteUserRelatedCollections(uid);
+
+      // Then delete the user from Firebase Auth
+      await user.delete();
+
+      print('User account and all related data deleted successfully');
+      return true;
+    } catch (e) {
+      print('Error deleting account: $e');
+      return false;
+    }
+  }
 }
