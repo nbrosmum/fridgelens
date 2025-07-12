@@ -53,13 +53,13 @@ class ShoppingItem {
     String? category,
   }) {
     return ShoppingItem(
-      id: this.id,
+      id: id,
       name: name ?? this.name,
       quantity: quantity ?? this.quantity,
       isCompleted: isCompleted ?? this.isCompleted,
       category: category ?? this.category,
-      userId: this.userId,
-      createdAt: this.createdAt,
+      userId: userId,
+      createdAt: createdAt,
     );
   }
 }

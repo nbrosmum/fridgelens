@@ -8,6 +8,7 @@
       "version": "1.0.0+1",
       "dependencies": [
         "cloud_firestore",
+        "cloudinary_public",
         "cupertino_icons",
         "firebase_auth",
         "firebase_core",
@@ -153,6 +154,14 @@
         "flutter_local_notifications_platform_interface",
         "flutter_local_notifications_windows",
         "timezone"
+      ]
+    },
+    {
+      "name": "cloudinary_public",
+      "version": "0.21.0",
+      "dependencies": [
+        "dio",
+        "flutter"
       ]
     },
     {
@@ -628,6 +637,18 @@
       ]
     },
     {
+      "name": "dio",
+      "version": "5.8.0+1",
+      "dependencies": [
+        "async",
+        "collection",
+        "dio_web_adapter",
+        "http_parser",
+        "meta",
+        "path"
+      ]
+    },
+    {
       "name": "firebase_database_web",
       "version": "0.2.6+13",
       "dependencies": [
@@ -804,6 +825,16 @@
         "ffi",
         "meta",
         "xml"
+      ]
+    },
+    {
+      "name": "dio_web_adapter",
+      "version": "2.1.1",
+      "dependencies": [
+        "dio",
+        "http_parser",
+        "meta",
+        "web"
       ]
     },
     {

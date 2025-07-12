@@ -4,6 +4,7 @@ class UserModel {
   final String? displayName;
   String? phoneNumber;
   String? dateOfBirth;
+  List<String> friends; // List of friend UIDs
 
   UserModel({
     required this.uid,
@@ -11,6 +12,7 @@ class UserModel {
     this.displayName,
     this.phoneNumber,
     this.dateOfBirth,
+    this.friends = const [], // Default to empty list
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
@@ -20,6 +22,7 @@ class UserModel {
       displayName: map['displayName'],
       phoneNumber: map['phoneNumber'],
       dateOfBirth: map['dateOfBirth'],
+      friends: List<String>.from(map['friends'] ?? []),
     );
   }
 
@@ -30,6 +33,7 @@ class UserModel {
       'displayName': displayName,
       'phoneNumber': phoneNumber,
       'dateOfBirth': dateOfBirth,
+      'friends': friends,
     };
   }
 }

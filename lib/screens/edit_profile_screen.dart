@@ -13,8 +13,15 @@ class EditProfileScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: const SingleChildScrollView(
-        child: Padding(padding: EdgeInsets.all(16.0), child: EditProfileForm()),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: EditProfileForm(),
+            ),
+          ],
+        ),
       ),
     );
   }

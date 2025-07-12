@@ -8,6 +8,10 @@ import 'screens/forgot_password_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/friend_list_screen.dart';
+import 'screens/add_friend_screen.dart';
+import 'screens/fridge_list_screen.dart';
+import 'screens/add_fridge_screen.dart';
 import 'utils/constants.dart';
 import 'services/auth_service.dart';
 
@@ -62,6 +66,12 @@ class MyApp extends StatelessWidget {
         '/change_password': (context) => const ChangePasswordScreen(),
         '/edit_profile': (context) => const EditProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
+        '/friends': (context) => const FriendListScreen(),
+        '/add_friend': (context) => const AddFriendScreen(),
+        '/fridges': (context) => const FridgeListScreen(),
+        '/add_fridge': (context) => const AddFridgeScreen(),
+        // Note: Routes that require parameters (like fridge_detail and add_fridge_item)
+        // are handled via MaterialPageRoute in the code instead of named routes
       },
       initialRoute: '/',
     );

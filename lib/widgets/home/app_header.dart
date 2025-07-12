@@ -4,13 +4,21 @@ import '../../utils/constants.dart';
 class AppHeader extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final List<Widget>? actions;
+  final Color backgroundColor;
+  final Color foregroundColor;
 
-  const AppHeader({super.key, required this.title, this.actions});
+  const AppHeader({
+    super.key,
+    required this.title,
+    this.actions,
+    this.backgroundColor = AppColors.primary,
+    this.foregroundColor = Colors.white,
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: backgroundColor,
       elevation: 0,
       title: Row(
         children: [
@@ -44,24 +52,24 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: 12),
-          ShaderMask(
-            shaderCallback: (bounds) => LinearGradient(
-              colors: [AppColors.primary, AppColors.secondary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
         ],
       ),
-      actions: actions,
+      actions: actions != null
+          ? [
+              IconTheme(
+                data: IconThemeData(color: Colors.white),
+                child: Row(mainAxisSize: MainAxisSize.min, children: actions!),
+              ),
+            ]
+          : null,
     );
   }
 

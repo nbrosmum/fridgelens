@@ -34,6 +34,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^3.14.0
   firebase_database: ^11.3.7
+  # Replacing Firebase Storage with Cloudinary
+  # firebase_storage: ^12.3.0
+  cloudinary_public: ^0.21.0
   flutter_local_notifications: ^19.3.0
   tflite_flutter: ^0.11.0
   image_picker: ^1.1.2

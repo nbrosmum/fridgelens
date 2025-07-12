@@ -11,6 +11,12 @@ import '../widgets/shopping/empty_shopping_list.dart';
 import '../models/shopping_item_model.dart';
 import 'change_password_screen.dart';
 import 'settings_screen.dart';
+import 'friend_list_screen.dart';
+import 'fridge_list_screen.dart';
+import '../services/friend_service.dart';
+import '../models/user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  final FriendService _friendService = FriendService();
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -33,6 +40,74 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+  }
+
+  void _showFriendRequestsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Friend Requests'),
+          content: SizedBox(
+            width: 300,
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _friendService.getPendingFriendRequests(),
+              builder: (context, snapshot) {
+                final user = _friendService.currentUserId;
+                print('Current user UID: ${user ?? 'null'}');
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final requests = snapshot.data ?? [];
+                print('Fetched requests count: \'${requests.length}\'');
+                for (final req in requests) {
+                  print('Request: $req');
+                }
+                if (requests.isEmpty) {
+                  return const Text('No pending friend requests.');
+                }
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: requests.length,
+                  itemBuilder: (context, index) {
+                    final req = requests[index];
+                    return FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(req['senderId'])
+                          .get(),
+                      builder: (context, userSnapshot) {
+                        if (!userSnapshot.hasData) {
+                          return const ListTile(title: Text('Loading...'));
+                        }
+                        final userData =
+                            userSnapshot.data!.data() as Map<String, dynamic>?;
+                        final displayName =
+                            userData?['displayName'] ?? 'Unknown';
+                        final email = userData?['email'] ?? '';
+                        return ListTile(
+                          title: Text(displayName),
+                          subtitle: Text(email),
+                          trailing: ElevatedButton(
+                            onPressed: () async {
+                              await _friendService.acceptFriendRequest(
+                                req['id'],
+                              );
+                              Navigator.of(context).pop();
+                            },
+                            child: const Text('Accept'),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -127,18 +202,51 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
+    final FriendService _friendService = FriendService();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: const AppHeader(
+      appBar: AppHeader(
         title: AppStrings.appName,
         actions: [
-          IconButton(
-            onPressed: null,
-            icon: Icon(Icons.notifications_outlined),
-            color: AppColors.primary,
+          StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _friendService.getPendingFriendRequests(),
+            builder: (context, snapshot) {
+              final hasNotifications =
+                  snapshot.hasData && snapshot.data!.isNotEmpty;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NotificationScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (hasNotifications)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
         ],
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: Center(
         child: Column(
@@ -189,41 +297,8 @@ class FridgeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'My Fridge',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search),
-            color: AppColors.primary,
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.filter_list),
-            color: AppColors.primary,
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Fridge Contents', style: TextStyle(fontSize: 24)),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: AppColors.primary,
-        heroTag: 'fridgeAddBtn',
-        child: const Icon(Icons.add),
-      ),
-    );
+    // Use the FridgeListScreen for the Fridge tab
+    return const FridgeListScreen();
   }
 }
 
@@ -243,14 +318,11 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
         elevation: 0,
         title: const Text(
           'Shopping List',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -283,6 +355,7 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
                 ),
               ),
             ],
+            icon: const Icon(Icons.more_vert, color: Colors.white),
           ),
         ],
       ),
@@ -652,14 +725,11 @@ class _ProfileTabState extends State<ProfileTab> {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.primary,
         elevation: 0,
         title: const Text(
           'My Profile',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -682,8 +752,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 );
               }
             },
-            icon: const Icon(Icons.logout),
-            color: AppColors.primary,
+            icon: const Icon(Icons.logout, color: Colors.white),
           ),
         ],
       ),
@@ -751,6 +820,20 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
 
             const SizedBox(height: 20),
+
+            _buildProfileOption(
+              context,
+              Icons.people_outline,
+              'Friends',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FriendListScreen(),
+                  ),
+                );
+              },
+            ),
             _buildProfileOption(
               context,
               Icons.person_outline,

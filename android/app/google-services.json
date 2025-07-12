@@ -14,15 +14,7 @@
       },
       "oauth_client": [
         {
-          "client_id": "20740409582-sample_placeholder_value.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.fridgelens",
-            "certificate_hash": "placeholder_hash_value"
-          }
-        },
-        {
-          "client_id": "20740409582-another_placeholder_value.apps.googleusercontent.com",
+          "client_id": "20740409582-hd6vnl02gv8jv3v21l5tu7ks3m1u4k05.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -35,7 +27,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "20740409582-another_placeholder_value.apps.googleusercontent.com",
+              "client_id": "20740409582-hd6vnl02gv8jv3v21l5tu7ks3m1u4k05.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

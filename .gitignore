@@ -1,3 +1,25 @@
 # Build folder and log file
 build/
 build.log
+
+# Environment files and secrets
+.env
+.env.local
+.env.production
+*.key
+*.pem
+
+# IDE files
+.vscode/
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.lock

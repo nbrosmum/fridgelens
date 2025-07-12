@@ -5,6 +5,8 @@ import '../utils/constants.dart';
 import '../widgets/login/login_form.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
+import 'dart:io'; // Added for InternetAddress
+import 'package:cloud_firestore/cloud_firestore.dart'; // Added for FirebaseFirestore
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -47,6 +49,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Check network connectivity first
+      try {
+        final result = await InternetAddress.lookup('google.com');
+        if (result.isEmpty || result[0].rawAddress.isEmpty) {
+          throw Exception('No internet connection');
+        }
+      } catch (e) {
+        setState(() {
+          _errorMessage =
+              'No internet connection. Please check your network and try again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Test Firebase connectivity
+      try {
+        await FirebaseFirestore.instance.collection('test').limit(1).get();
+      } catch (e) {
+        print('Firebase connectivity test failed: $e');
+        setState(() {
+          _errorMessage =
+              'Unable to connect to Firebase. Please check your configuration.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final user = await _authService.signInWithEmailAndPassword(
         email,
         password,
@@ -79,6 +109,16 @@ class _LoginScreenState extends State<LoginScreen> {
         } else if (e.code == 'invalid-credential') {
           errorMsg =
               'Invalid login credentials. Please check your email and password.';
+        } else if (e.code == 'network-request-failed') {
+          errorMsg =
+              'Network error. Please check your internet connection and try again.';
+        } else if (e.code == 'too-many-requests') {
+          errorMsg = 'Too many failed attempts. Please try again later.';
+        } else if (e.code == 'user-disabled') {
+          errorMsg = 'This account has been disabled. Please contact support.';
+        } else if (e.code == 'operation-not-allowed') {
+          errorMsg =
+              'Email/password sign in is not enabled. Please contact support.';
         } else if (e.message != null) {
           errorMsg = e.message!;
         }
@@ -91,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
       print('Unexpected error during login: $e');
       if (mounted) {
         setState(() {
-          _errorMessage = 'An unexpected error occurred';
+          _errorMessage = 'An unexpected error occurred. Please try again.';
         });
       }
     } finally {
