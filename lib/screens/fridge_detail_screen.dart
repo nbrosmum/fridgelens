@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/fridge_model.dart';
 import '../models/fridge_item_model.dart';
+import '../models/user_model.dart';
 import '../services/fridge_service.dart';
 import '../services/fridge_item_service.dart';
+import '../services/auth_service.dart';
 import '../utils/constants.dart';
 import '../widgets/fridge/fridge_item_tile.dart';
 import '../widgets/fridge/add_contributor_dialog.dart';
@@ -388,44 +390,62 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ListTile(
-              title: Text(
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
                 'Owner',
                 style: TextStyle(
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isOwner ? AppColors.primary : Colors.black87,
+                  color: AppColors.primary,
                 ),
               ),
-              subtitle: const Text(
-                'This person has full control of this fridge',
-              ),
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.person, color: AppColors.primary),
-              ),
-              trailing: isOwner
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'You',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                  : null,
+            ),
+            FutureBuilder<UserModel?>(
+              future: AuthService().getUserDataById(fridge.ownerId),
+              builder: (context, userSnapshot) {
+                final ownerName =
+                    userSnapshot.data?.displayName ?? 'Unknown Owner';
+                return ListTile(
+                  title: Text(
+                    ownerName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isOwner ? AppColors.primary : Colors.black87,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'This person has full control of this fridge',
+                  ),
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person, color: AppColors.primary),
+                  ),
+                  trailing: isOwner
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'You',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      : null,
+                );
+              },
             ),
             const Divider(),
             Padding(
@@ -462,31 +482,38 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
                       itemCount: contributors.length,
                       itemBuilder: (context, index) {
                         final contributorId = contributors[index];
-                        // In a real app, you would fetch user data by ID
-                        return ListTile(
-                          title: Text('Contributor $contributorId'),
-                          subtitle: const Text('Can view and add items'),
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary.withOpacity(0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.person_outline,
-                              color: AppColors.secondary,
-                            ),
-                          ),
-                          trailing: isOwner
-                              ? IconButton(
-                                  icon: const Icon(
-                                    Icons.remove_circle_outline,
-                                    color: Colors.red,
-                                  ),
-                                  onPressed: () =>
-                                      _removeContributor(contributorId),
-                                )
-                              : null,
+                        return FutureBuilder<UserModel?>(
+                          future: AuthService().getUserDataById(contributorId),
+                          builder: (context, userSnapshot) {
+                            final contributorName =
+                                userSnapshot.data?.displayName ??
+                                'Unknown User';
+                            return ListTile(
+                              title: Text(contributorName),
+                              subtitle: const Text('Can view and add items'),
+                              leading: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondary.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.person_outline,
+                                  color: AppColors.secondary,
+                                ),
+                              ),
+                              trailing: isOwner
+                                  ? IconButton(
+                                      icon: const Icon(
+                                        Icons.remove_circle_outline,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () =>
+                                          _removeContributor(contributorId),
+                                    )
+                                  : null,
+                            );
+                          },
                         );
                       },
                     ),

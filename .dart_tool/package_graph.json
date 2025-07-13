@@ -8,7 +8,6 @@
       "version": "1.0.0+1",
       "dependencies": [
         "cloud_firestore",
-        "cloudinary_public",
         "cupertino_icons",
         "firebase_auth",
         "firebase_core",
@@ -17,6 +16,7 @@
         "flutter_launcher_icons",
         "flutter_local_notifications",
         "flutter_svg",
+        "http",
         "image_picker",
         "intl",
         "tflite_flutter"
@@ -157,11 +157,13 @@
       ]
     },
     {
-      "name": "cloudinary_public",
-      "version": "0.21.0",
+      "name": "http",
+      "version": "1.4.0",
       "dependencies": [
-        "dio",
-        "flutter"
+        "async",
+        "http_parser",
+        "meta",
+        "web"
       ]
     },
     {
@@ -389,16 +391,6 @@
         "flutter",
         "http",
         "vector_graphics_codec"
-      ]
-    },
-    {
-      "name": "http",
-      "version": "1.4.0",
-      "dependencies": [
-        "async",
-        "http_parser",
-        "meta",
-        "web"
       ]
     },
     {
@@ -637,15 +629,18 @@
       ]
     },
     {
-      "name": "dio",
-      "version": "5.8.0+1",
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "http_parser",
+      "version": "4.1.2",
       "dependencies": [
-        "async",
         "collection",
-        "dio_web_adapter",
-        "http_parser",
-        "meta",
-        "path"
+        "source_span",
+        "string_scanner",
+        "typed_data"
       ]
     },
     {
@@ -703,21 +698,6 @@
       "dependencies": [
         "meta",
         "vector_math"
-      ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
-      "name": "http_parser",
-      "version": "4.1.2",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner",
-        "typed_data"
       ]
     },
     {
@@ -828,13 +808,10 @@
       ]
     },
     {
-      "name": "dio_web_adapter",
-      "version": "2.1.1",
+      "name": "typed_data",
+      "version": "1.4.0",
       "dependencies": [
-        "dio",
-        "http_parser",
-        "meta",
-        "web"
+        "collection"
       ]
     },
     {
@@ -843,13 +820,6 @@
       "dependencies": [
         "collection",
         "meta"
-      ]
-    },
-    {
-      "name": "typed_data",
-      "version": "1.4.0",
-      "dependencies": [
-        "collection"
       ]
     },
     {

@@ -14,7 +14,6 @@ import 'settings_screen.dart';
 import 'fridge_list_screen.dart';
 import 'friend_list_screen.dart';
 import 'notification_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/friend_service.dart';
 import '../services/notification_service.dart';
 
@@ -27,8 +26,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final FriendService _friendService = FriendService();
-  final NotificationService _notificationService = NotificationService();
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -142,7 +139,6 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
-    final FriendService friendService = FriendService();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],

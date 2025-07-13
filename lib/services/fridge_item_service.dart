@@ -1,24 +1,85 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:convert';
 import '../models/fridge_item_model.dart';
-import '../utils/cloudinary_config.dart';
+import '../utils/imagekit_config.dart';
 import 'fridge_service.dart';
 
 class FridgeItemService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // Initialize Cloudinary with credentials from config
-  final cloudinary = CloudinaryPublic(
-    CloudinaryConfig.cloudName,
-    CloudinaryConfig.uploadPreset,
-    cache: false,
-  );
   final FridgeService _fridgeService = FridgeService();
 
   // Get current user ID
   String? get currentUserId => _auth.currentUser?.uid;
+
+  // Upload image to ImageKit
+  Future<Map<String, dynamic>> _uploadImageToImageKit(
+    File imageFile,
+    String folderPath,
+  ) async {
+    try {
+      // Create multipart request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ImageKitConfig.authenticationEndpoint),
+      );
+
+      // Add authorization header
+      request.headers['Authorization'] =
+          'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}';
+
+      // Add fields
+      request.fields['fileName'] =
+          '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
+      request.fields['folder'] = folderPath;
+
+      // Add file
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+
+      // Send request
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+      var jsonResponse = json.decode(responseData);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'url': jsonResponse['url'],
+          'fileId': jsonResponse['fileId'],
+        };
+      } else {
+        return {
+          'success': false,
+          'error': jsonResponse['message'] ?? 'Upload failed',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Upload error: $e'};
+    }
+  }
+
+  // Delete image from ImageKit.io
+  Future<bool> _deleteImageFromImageKit(String fileId) async {
+    try {
+      final url = Uri.parse('https://api.imagekit.io/v1/files/$fileId');
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization':
+              'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}',
+        },
+      );
+      return response.statusCode == 204;
+    } catch (e) {
+      print('Error deleting image from ImageKit: $e');
+      return false;
+    }
+  }
 
   // Add a new item to a fridge
   Future<Map<String, dynamic>> addFridgeItem({
@@ -43,26 +104,28 @@ class FridgeItemService {
 
       // Upload image if provided
       String imageUrl = '';
-      String publicId = '';
+      String fileId = '';
       if (imageFile != null) {
         try {
           // Create a folder path for organization
-          final folderPath = 'fridge_items/$fridgeId';
+          final folderPath = '${ImageKitConfig.uploadFolder}/$fridgeId';
 
-          // Upload to Cloudinary
-          final response = await cloudinary.uploadFile(
-            CloudinaryFile.fromFile(
-              imageFile.path,
-              folder: folderPath,
-              resourceType: CloudinaryResourceType.Image,
-            ),
+          // Upload to ImageKit
+          final uploadResult = await _uploadImageToImageKit(
+            imageFile,
+            folderPath,
           );
 
-          // Get the secure URL and public ID
-          imageUrl = response.secureUrl;
-          publicId = response.publicId;
+          if (uploadResult['success']) {
+            imageUrl = uploadResult['url'];
+            fileId = uploadResult['fileId'];
+          } else {
+            print(
+              'Error uploading image to ImageKit: ${uploadResult['error']}',
+            );
+          }
         } catch (e) {
-          print('Error uploading image to Cloudinary: $e');
+          print('Error uploading image to ImageKit: $e');
         }
       }
 
@@ -76,7 +139,7 @@ class FridgeItemService {
         'name': name,
         'category': category,
         'imageUrl': imageUrl,
-        'publicId': publicId,
+        'fileId': fileId,
         'expiryDate': expiryDate,
         'reminderDate': actualReminderDate,
         'status': status,
@@ -134,21 +197,23 @@ class FridgeItemService {
       if (newImageFile != null) {
         try {
           // Create a folder path for organization
-          final folderPath = 'fridge_items/$fridgeId';
+          final folderPath = '${ImageKitConfig.uploadFolder}/$fridgeId';
 
-          // Upload to Cloudinary
-          final response = await cloudinary.uploadFile(
-            CloudinaryFile.fromFile(
-              newImageFile.path,
-              folder: folderPath,
-              resourceType: CloudinaryResourceType.Image,
-            ),
+          // Upload to ImageKit
+          final uploadResult = await _uploadImageToImageKit(
+            newImageFile,
+            folderPath,
           );
 
-          // Get the secure URL
-          imageUrl = response.secureUrl;
+          if (uploadResult['success']) {
+            imageUrl = uploadResult['url'];
+          } else {
+            print(
+              'Error uploading image to ImageKit: ${uploadResult['error']}',
+            );
+          }
         } catch (e) {
-          print('Error uploading image to Cloudinary: $e');
+          print('Error uploading image to ImageKit: $e');
         }
       }
 
@@ -198,7 +263,13 @@ class FridgeItemService {
         };
       }
 
-      // Delete the item
+      // Delete image from ImageKit if fileId exists
+      if (itemData['fileId'] != null &&
+          itemData['fileId'].toString().isNotEmpty) {
+        await _deleteImageFromImageKit(itemData['fileId']);
+      }
+
+      // Delete the item from Firestore
       await _firestore.collection('fridge_items').doc(itemId).delete();
 
       return {'success': true, 'message': 'Item deleted successfully'};
