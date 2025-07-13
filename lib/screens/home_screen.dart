@@ -11,12 +11,12 @@ import '../widgets/shopping/empty_shopping_list.dart';
 import '../models/shopping_item_model.dart';
 import 'change_password_screen.dart';
 import 'settings_screen.dart';
-import 'friend_list_screen.dart';
 import 'fridge_list_screen.dart';
-import '../services/friend_service.dart';
-import '../models/user_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'friend_list_screen.dart';
 import 'notification_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/friend_service.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +28,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   final FriendService _friendService = FriendService();
+  final NotificationService _notificationService = NotificationService();
 
   final List<Widget> _screens = [
     const HomeTab(),
@@ -40,74 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
-  }
-
-  void _showFriendRequestsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Friend Requests'),
-          content: SizedBox(
-            width: 300,
-            child: StreamBuilder<List<Map<String, dynamic>>>(
-              stream: _friendService.getPendingFriendRequests(),
-              builder: (context, snapshot) {
-                final user = _friendService.currentUserId;
-                print('Current user UID: ${user ?? 'null'}');
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final requests = snapshot.data ?? [];
-                print('Fetched requests count: \'${requests.length}\'');
-                for (final req in requests) {
-                  print('Request: $req');
-                }
-                if (requests.isEmpty) {
-                  return const Text('No pending friend requests.');
-                }
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: requests.length,
-                  itemBuilder: (context, index) {
-                    final req = requests[index];
-                    return FutureBuilder<DocumentSnapshot>(
-                      future: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(req['senderId'])
-                          .get(),
-                      builder: (context, userSnapshot) {
-                        if (!userSnapshot.hasData) {
-                          return const ListTile(title: Text('Loading...'));
-                        }
-                        final userData =
-                            userSnapshot.data!.data() as Map<String, dynamic>?;
-                        final displayName =
-                            userData?['displayName'] ?? 'Unknown';
-                        final email = userData?['email'] ?? '';
-                        return ListTile(
-                          title: Text(displayName),
-                          subtitle: Text(email),
-                          trailing: ElevatedButton(
-                            onPressed: () async {
-                              await _friendService.acceptFriendRequest(
-                                req['id'],
-                              );
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('Accept'),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
@@ -199,33 +132,32 @@ class _HomeScreenState extends State<HomeScreen> {
 class HomeTab extends StatelessWidget {
   const HomeTab({super.key});
 
+  static void _showNotificationsScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     User? user = FirebaseAuth.instance.currentUser;
-    final FriendService _friendService = FriendService();
+    final FriendService friendService = FriendService();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppHeader(
         title: AppStrings.appName,
         actions: [
-          StreamBuilder<List<Map<String, dynamic>>>(
-            stream: _friendService.getPendingFriendRequests(),
+          StreamBuilder<int>(
+            stream: NotificationService().getUnreadCount(),
             builder: (context, snapshot) {
-              final hasNotifications =
-                  snapshot.hasData && snapshot.data!.isNotEmpty;
+              final hasNotifications = snapshot.hasData && snapshot.data! > 0;
               return Stack(
                 children: [
                   IconButton(
                     icon: const Icon(Icons.notifications),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => NotificationScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: () => _showNotificationsScreen(context),
                   ),
                   if (hasNotifications)
                     Positioned(
@@ -821,16 +753,24 @@ class _ProfileTabState extends State<ProfileTab> {
 
             const SizedBox(height: 20),
 
-            _buildProfileOption(
-              context,
-              Icons.people_outline,
-              'Friends',
-              onTap: () {
-                Navigator.push(
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FriendService().getPendingFriendRequests(),
+              builder: (context, snapshot) {
+                final hasRequests =
+                    snapshot.hasData && snapshot.data!.isNotEmpty;
+                return _buildProfileOption(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const FriendListScreen(),
-                  ),
+                  Icons.people_outline,
+                  'Friends',
+                  showBadge: hasRequests,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FriendListScreen(),
+                      ),
+                    );
+                  },
                 );
               },
             ),

@@ -343,7 +343,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'No items in ${compartment}',
+            'No items in $compartment',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[600],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/register_screen.dart';
@@ -9,7 +10,7 @@ import 'screens/change_password_screen.dart';
 import 'screens/edit_profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/friend_list_screen.dart';
-import 'screens/add_friend_screen.dart';
+
 import 'screens/fridge_list_screen.dart';
 import 'screens/add_fridge_screen.dart';
 import 'utils/constants.dart';
@@ -25,8 +26,17 @@ void main() async {
     // Initialize Firebase
     await Firebase.initializeApp();
 
-    // Set persistence mode to LOCAL
+    // Set persistence mode to LOCAL for Auth
     await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+
+    // Enable Firestore offline persistence
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
+
+    // Disable offline persistence for friend requests to prevent cache issues
+    // This will be handled manually in the friend service
 
     // Initialize auth service after Firebase
     print(
@@ -67,7 +77,7 @@ class MyApp extends StatelessWidget {
         '/edit_profile': (context) => const EditProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/friends': (context) => const FriendListScreen(),
-        '/add_friend': (context) => const AddFriendScreen(),
+
         '/fridges': (context) => const FridgeListScreen(),
         '/add_fridge': (context) => const AddFridgeScreen(),
         // Note: Routes that require parameters (like fridge_detail and add_fridge_item)
