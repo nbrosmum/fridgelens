@@ -6,7 +6,6 @@ import '../utils/constants.dart';
 import '../utils/category_icons.dart';
 import '../widgets/home/app_header.dart';
 import '../widgets/shopping/shopping_item_tile.dart';
-import '../widgets/shopping/add_shopping_item_dialog.dart';
 import '../widgets/shopping/empty_shopping_list.dart';
 import '../models/shopping_item_model.dart';
 import 'change_password_screen.dart';
@@ -16,6 +15,7 @@ import 'friend_list_screen.dart';
 import 'notification_screen.dart';
 import '../services/friend_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/shopping/add_shopping_item_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -452,20 +452,18 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
   }
 
   void _showAddItemDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AddShoppingItemDialog(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddShoppingItemBottomSheet(
         onAdd: (name, quantity, category) async {
           try {
-            print('Dialog: Adding item $name, $quantity, category: $category');
             await _shoppingService.addShoppingItem(
               name: name,
               quantity: quantity,
               category: category,
             );
-            print('Dialog: Item added successfully');
-
-            // Show success message with green background
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -481,9 +479,6 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
               );
             }
           } catch (e) {
-            print('Dialog: Error adding item: $e');
-
-            // Show error message with red background
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -505,9 +500,11 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
   }
 
   void _showEditItemDialog(ShoppingItem item) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AddShoppingItemDialog(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddShoppingItemBottomSheet(
         isEditing: true,
         initialName: item.name,
         initialQuantity: item.quantity,
@@ -520,8 +517,6 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
               category: category,
             );
             await _shoppingService.updateShoppingItem(updatedItem);
-
-            // Show success message with green background
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -537,7 +532,6 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
               );
             }
           } catch (e) {
-            // Show error message with red background
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

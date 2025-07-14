@@ -10,7 +10,7 @@ import '../widgets/fridge/fridge_item_tile.dart';
 import '../widgets/fridge/add_contributor_dialog.dart';
 import 'add_fridge_item_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../widgets/fridge/edit_fridge_item_dialog.dart';
+import '../widgets/fridge/edit_fridge_item_bottom_sheet.dart';
 
 class FridgeDetailScreen extends StatefulWidget {
   final FridgeModel fridge;
@@ -744,11 +744,12 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
   }
 
   void _showEditFridgeItemDialog(FridgeItemModel item) async {
-    print('Opening edit dialog for item: ${item.name}');
-    final result = await showDialog<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) =>
-          EditFridgeItemDialog(item: item, fridge: widget.fridge),
+          EditFridgeItemBottomSheet(item: item, fridge: widget.fridge),
     );
     if (result != null && result['updated'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(

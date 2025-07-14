@@ -1,0 +1,9 @@
+0 Fruits
+1 Vegetables
+2 Dairy Products
+3 Meat & Poultry
+4 Bakery & Grains
+5 Drinks & Beverages
+6 Condiments & Sauces
+7 Frozen Food
+8 Other
