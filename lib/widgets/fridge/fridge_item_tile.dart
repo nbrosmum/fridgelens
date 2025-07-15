@@ -165,26 +165,10 @@ class FridgeItemTile extends StatelessWidget {
                                 ).withOpacity(0.3),
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _getCompartmentIcon(item.compartment),
-                                  size: 10,
-                                  color: _getCompartmentColor(item.compartment),
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  item.compartment.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 8,
-                                    color: _getCompartmentColor(
-                                      item.compartment,
-                                    ),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
+                            child: Icon(
+                              _getCompartmentIcon(item.compartment),
+                              size: 14,
+                              color: _getCompartmentColor(item.compartment),
                             ),
                           ),
                         ],
