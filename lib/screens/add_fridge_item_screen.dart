@@ -6,6 +6,8 @@ import '../services/fridge_item_service.dart';
 import '../services/fridge_service.dart';
 import '../models/fridge_model.dart';
 import '../utils/constants.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:image/image.dart' as img;
 
 class AddFridgeItemScreen extends StatefulWidget {
   final String fridgeId;
@@ -26,6 +28,8 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   bool _isLoading = false;
   String _selectedCompartment = 'chiller'; // Default to chiller
   FridgeModel? _fridge;
+  Interpreter? _interpreter;
+  List<String> _labels = [];
 
   final FridgeItemService _fridgeItemService = FridgeItemService();
   final FridgeService _fridgeService = FridgeService();
@@ -66,6 +70,77 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
       // Handle error silently or show a message
       print('Error loading fridge info: $e');
     }
+  }
+
+  // Load TFLite model and labels
+  Future<void> _loadModel() async {
+    if (_interpreter != null && _labels.isNotEmpty) return;
+    _interpreter = await Interpreter.fromAsset(
+      'assets/model/model_unquant.tflite',
+    );
+    final labelsTxt = await DefaultAssetBundle.of(
+      context,
+    ).loadString('assets/model/labels.txt');
+    _labels = labelsTxt.split('\n').where((l) => l.trim().isNotEmpty).toList();
+  }
+
+  // Run inference on an image file
+  Future<String?> _runInference(File imageFile) async {
+    await _loadModel();
+    // Read image from file
+    final bytes = await imageFile.readAsBytes();
+    img.Image? oriImage = img.decodeImage(bytes);
+    if (oriImage == null) return null;
+    // Resize to 224x224 (Teachable Machine default)
+    img.Image resized = img.copyResize(oriImage, width: 224, height: 224);
+    // Normalize to [0,1] and convert to float32
+    var input = List.generate(
+      1,
+      (b) => List.generate(
+        224,
+        (y) => List.generate(
+          224,
+          (x) => List.generate(3, (c) {
+            final pixel = resized.getPixel(x, y);
+            return c == 0
+                ? pixel.r
+                : c == 1
+                ? pixel.g
+                : pixel.b;
+          }, growable: false),
+          growable: false,
+        ),
+        growable: false,
+      ),
+      growable: false,
+    );
+    // Convert to float32 and normalize
+    var inputAsFloat = List.generate(
+      1,
+      (b) => List.generate(
+        224,
+        (y) => List.generate(
+          224,
+          (x) => List.generate(
+            3,
+            (c) => (input[b][y][x][c] / 255.0).toDouble(),
+            growable: false,
+          ),
+          growable: false,
+        ),
+        growable: false,
+      ),
+      growable: false,
+    );
+    var output = List.filled(_labels.length, 0.0).reshape([1, _labels.length]);
+    _interpreter!.run(inputAsFloat, output);
+    final scores = output[0] as List<double>;
+    final maxScore = scores.reduce((a, b) => a > b ? a : b);
+    final maxIdx = scores.indexOf(maxScore);
+    if (maxScore < 0.75) {
+      return null; // Less than 75% confidence, treat as unclassified
+    }
+    return _labels[maxIdx];
   }
 
   @override
@@ -188,6 +263,11 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
     }
   }
 
+  // Smart Insert button handler
+  Future<void> _onSmartInsertPressed() async {
+    _showImageSourceOptions(smartInsert: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -240,6 +320,19 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 16),
+              // Smart Insert Button
+              Center(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Smart Insert'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: _onSmartInsertPressed,
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Item name
@@ -277,6 +370,13 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                   if (value != null) {
                     setState(() {
                       _selectedCategory = value;
+                      // Auto-switch compartment if needed
+                      if (_fridge?.type == 'both' &&
+                          (value == 'Meat & Poultry' ||
+                              value == 'Frozen Food')) {
+                        _selectedCompartment = 'freezer';
+                      }
+                      // User can still manually change compartment
                     });
                   }
                 },
@@ -382,7 +482,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
     );
   }
 
-  void _showImageSourceOptions() {
+  void _showImageSourceOptions({bool smartInsert = false}) {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -392,17 +492,39 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
             ListTile(
               leading: const Icon(Icons.photo_library),
               title: const Text('Choose from Gallery'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                _selectImage();
+                final XFile? image = await _imagePicker.pickImage(
+                  source: ImageSource.gallery,
+                  imageQuality: 70,
+                );
+                if (image != null) {
+                  setState(() {
+                    _imageFile = File(image.path);
+                  });
+                  if (smartInsert) {
+                    await _handleSmartInsertWithImage(_imageFile!);
+                  }
+                }
               },
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt),
               title: const Text('Take a Photo'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                _takePhoto();
+                final XFile? photo = await _imagePicker.pickImage(
+                  source: ImageSource.camera,
+                  imageQuality: 70,
+                );
+                if (photo != null) {
+                  setState(() {
+                    _imageFile = File(photo.path);
+                  });
+                  if (smartInsert) {
+                    await _handleSmartInsertWithImage(_imageFile!);
+                  }
+                }
               },
             ),
             if (_imageFile != null)
@@ -423,5 +545,69 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
         ),
       ),
     );
+  }
+
+  // New helper for smart insert with any image
+  Future<void> _handleSmartInsertWithImage(File imageFile) async {
+    final detectedCategory = await _runInference(imageFile);
+    if (detectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unclassified item. Please insert manually.'),
+        ),
+      );
+      setState(() {
+        _imageFile = null;
+      });
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Detected Item'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Detected category: $detectedCategory'),
+            TextFormField(
+              initialValue: detectedCategory,
+              decoration: const InputDecoration(labelText: 'Category'),
+              onChanged: (val) => _selectedCategory = val,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Confirm'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      final cleanedCategory = detectedCategory.replaceFirst(
+        RegExp(r'^\d+\s*'),
+        '',
+      );
+      _nameController.text = cleanedCategory;
+      if (_categories.contains(cleanedCategory)) {
+        setState(() {
+          _selectedCategory = cleanedCategory;
+          if (_fridge?.type == 'both' &&
+              (cleanedCategory == 'Meat & Poultry' ||
+                  cleanedCategory == 'Frozen Food')) {
+            _selectedCompartment = 'freezer';
+          }
+        });
+      }
+    } else {
+      setState(() {
+        _imageFile = null;
+      });
+    }
   }
 }
