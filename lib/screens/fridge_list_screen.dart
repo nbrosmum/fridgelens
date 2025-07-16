@@ -296,16 +296,15 @@ class _FridgeListScreenState extends State<FridgeListScreen> {
               // Delete the fridge
               final result = await _fridgeService.deleteFridge(fridge.id);
 
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result['message']),
-                    backgroundColor: result['success']
-                        ? Colors.green
-                        : Colors.red,
-                  ),
-                );
-              }
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(result['message']),
+                  backgroundColor: result['success']
+                      ? Colors.green
+                      : Colors.red,
+                ),
+              );
             },
             child: const Text('Delete'),
           ),

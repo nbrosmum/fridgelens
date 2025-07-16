@@ -64,7 +64,7 @@ class FridgeItemService {
   }
 
   // Delete image from ImageKit.io
-  Future<bool> _deleteImageFromImageKit(String fileId) async {
+  static Future<bool> deleteImageFromImageKit(String fileId) async {
     try {
       final url = Uri.parse('https://api.imagekit.io/v1/files/$fileId');
       final response = await http.delete(
@@ -276,7 +276,7 @@ class FridgeItemService {
       // Delete image from ImageKit if fileId exists
       if (itemData['fileId'] != null &&
           itemData['fileId'].toString().isNotEmpty) {
-        await _deleteImageFromImageKit(itemData['fileId']);
+        await deleteImageFromImageKit(itemData['fileId']);
       }
 
       // Delete the item from Firestore

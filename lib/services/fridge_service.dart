@@ -1,6 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/fridge_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import '../utils/imagekit_config.dart';
+import 'fridge_item_service.dart';
 
 class FridgeService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -107,14 +111,48 @@ class FridgeService {
           .where('fridgeId', isEqualTo: fridgeId)
           .get();
 
+      // 1. Delete all images in ImageKit folder
+      for (var doc in itemsQuery.docs) {
+        final itemData = doc.data();
+        final fileId = itemData['fileId'];
+        if (fileId != null && fileId.toString().isNotEmpty) {
+          try {
+            // 这里假设你有FridgeItemService实例
+            await FridgeItemService.deleteImageFromImageKit(fileId);
+          } catch (e) {
+            print('Error deleting image from ImageKit: $e');
+          }
+        }
+      }
+
+      // 2. Delete the ImageKit folder (if API supported, pseudo code)
+      try {
+        final folderPath = '/fridge_items/$fridgeId';
+        final url = Uri.parse('https://api.imagekit.io/v1/folder');
+        // Wait a while to ensure ImageKit sync
+        await Future.delayed(const Duration(milliseconds: 500));
+        final response = await http.delete(
+          url,
+          headers: {
+            'Authorization':
+                'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'folderPath': folderPath}),
+        );
+        print(
+          'Delete folder response: ${response.statusCode} ${response.body}',
+        );
+      } catch (e) {
+        print('Error deleting ImageKit folder: $e');
+      }
+
+      // 3. Delete Firestore data
       final batch = _firestore.batch();
       for (var doc in itemsQuery.docs) {
         batch.delete(doc.reference);
       }
-
-      // Delete the fridge
       batch.delete(_firestore.collection('fridges').doc(fridgeId));
-
       await batch.commit();
 
       return {
