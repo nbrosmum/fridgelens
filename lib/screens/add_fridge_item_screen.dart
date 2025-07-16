@@ -149,32 +149,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
     super.dispose();
   }
 
-  Future<void> _selectImage() async {
-    final XFile? image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
-
-    if (image != null) {
-      setState(() {
-        _imageFile = File(image.path);
-      });
-    }
-  }
-
-  Future<void> _takePhoto() async {
-    final XFile? photo = await _imagePicker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 70,
-    );
-
-    if (photo != null) {
-      setState(() {
-        _imageFile = File(photo.path);
-      });
-    }
-  }
-
   Future<void> _selectExpiryDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -233,9 +207,11 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
             const SnackBar(
               content: Text('Item added successfully'),
               backgroundColor: Colors.green,
+              duration: Duration(milliseconds: 800),
             ),
           );
-          Navigator.pop(context);
+          await Future.delayed(const Duration(milliseconds: 800));
+          if (mounted) Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

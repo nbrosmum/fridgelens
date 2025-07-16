@@ -168,6 +168,7 @@ class FridgeItemService {
     DateTime? reminderDate,
     String? status,
     String? compartment,
+    bool removeImage = false, // 新增参数
   }) async {
     try {
       // Get the item first to check access
@@ -216,7 +217,10 @@ class FridgeItemService {
           print('Error uploading image to ImageKit: $e');
         }
       }
-
+      // 移除图片逻辑
+      if (removeImage) {
+        imageUrl = '';
+      }
       // Update the item
       final Map<String, dynamic> updateData = {};
       if (name != null) updateData['name'] = name;

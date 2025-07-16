@@ -552,6 +552,18 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
                   ),
                   borderRadius: BorderRadius.circular(8),
                 ),
+              )
+            else
+              Container(
+                height: 150,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  image: const DecorationImage(
+                    image: AssetImage('assets/no_image.jpg'),
+                    fit: BoxFit.cover,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             const SizedBox(height: 16),
             _buildItemDetail('Category', item.category),
