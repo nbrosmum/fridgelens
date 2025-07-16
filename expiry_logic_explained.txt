@@ -1,0 +1,45 @@
+Expiry Logic Explanation
+=======================
+
+1. Each fridge item has an expiryDate field (DateTime), which represents the estimated expiry date of the item.
+
+2. When displaying items (in list or detail), the app compares the current date (now) with expiryDate:
+   - If expiryDate < now: the item is considered Expired (red color, 'Expired' label)
+   - If expiryDate - now <= 3 days: the item is considered Expiring Soon (orange color, 'Expiring Soon' label)
+   - Otherwise: the item is considered Fresh (green color, 'Fresh' label)
+
+3. The status field can also be set to 'almost_expiry', 'expired', or 'used' for more explicit control, but the main logic is based on the date comparison.
+
+4. There is a checkbox (ignoreExpiry) for each item. If checked, the item will not be checked for expiry or reminders.
+
+5. When adding or editing an item, the default expiry date is automatically set based on the selected category and compartment (chiller/freezer), according to a preset table (e.g., meat in freezer = 90 days, vegetables in chiller = 7 days, etc.).
+
+6. The backend (service layer) provides a method to fetch items that are about to expire (within 3 days) for notification or display purposes.
+
+7. The expiry date can be freely adjusted when adding or editing an item, making it easy to demo or test the logic.
+
+Summary:
+--------
+- Expiry is determined by comparing expiryDate with the current date.
+- Visual cues (color, label) and filters are used to help users manage expiring/expired items.
+- The logic is flexible, allowing for both automatic and manual control. 
+
+Default Expiry Duration Table
+============================
+
+| Category              | Chiller (days) | Freezer (days) |
+|-----------------------|----------------|----------------|
+| Vegetables            | 7              | 60             |
+| Fruits                | 7              | 60             |
+| Dairy Products        | 10             | 30             |
+| Meat & Poultry        | 3              | 90             |
+| Bakery & Grains       | 5              | 30             |
+| Drinks & Beverages    | 14             | 60             |
+| Condiments & Sauces   | 30             | 90             |
+| Frozen Food           | 2              | 180            |
+| Other                 | 7              | 60             |
+
+- When adding or editing an item, the system will auto-fill the expiry date based on this table, according to the selected category and compartment.
+- Users can still manually adjust the expiry date if needed.
+
+Note: Frozen Food should not be kept in the chiller for long. 2 days is a safety buffer for demo; in real life, consume as soon as possible. 

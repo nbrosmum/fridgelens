@@ -28,6 +28,9 @@ class _AddFridgeScreenState extends State<AddFridgeScreen> {
       return;
     }
 
+    // Hide any previous SnackBar before starting
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     setState(() {
       _isLoading = true;
     });
@@ -40,16 +43,19 @@ class _AddFridgeScreenState extends State<AddFridgeScreen> {
 
       if (mounted) {
         if (result['success']) {
+          // Hide any error SnackBar before showing success
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Fridge created successfully'),
               backgroundColor: Colors.green,
+              duration: Duration(milliseconds: 600),
             ),
           );
-
-          // Go back to previous screen
-          Navigator.pop(context);
+          // Wait for SnackBar to show, then pop
+          await Future.delayed(const Duration(milliseconds: 600));
+          if (mounted) Navigator.pop(context);
         } else {
           // Show error message
           ScaffoldMessenger.of(context).showSnackBar(

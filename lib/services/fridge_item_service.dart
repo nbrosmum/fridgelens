@@ -91,6 +91,7 @@ class FridgeItemService {
     DateTime? reminderDate,
     String status = 'fresh',
     String compartment = 'chiller',
+    bool ignoreExpiry = false,
   }) async {
     try {
       // Check if user has access to the fridge
@@ -146,6 +147,7 @@ class FridgeItemService {
         'createdBy': currentUserId,
         'createdAt': FieldValue.serverTimestamp(),
         'compartment': compartment,
+        'ignoreExpiry': ignoreExpiry,
       });
 
       return {
@@ -165,10 +167,12 @@ class FridgeItemService {
     String? name,
     String? category,
     File? newImageFile,
+    DateTime? expiryDate,
     DateTime? reminderDate,
     String? status,
     String? compartment,
-    bool removeImage = false, // 新增参数
+    bool removeImage = false, // New parameter
+    bool? ignoreExpiry,
   }) async {
     try {
       // Get the item first to check access
@@ -217,7 +221,7 @@ class FridgeItemService {
           print('Error uploading image to ImageKit: $e');
         }
       }
-      // 移除图片逻辑
+      // Remove image logic
       if (removeImage) {
         imageUrl = '';
       }
@@ -229,6 +233,8 @@ class FridgeItemService {
       if (reminderDate != null) updateData['reminderDate'] = reminderDate;
       if (status != null) updateData['status'] = status;
       if (compartment != null) updateData['compartment'] = compartment;
+      if (ignoreExpiry != null) updateData['ignoreExpiry'] = ignoreExpiry;
+      if (expiryDate != null) updateData['expiryDate'] = expiryDate;
 
       await _firestore
           .collection('fridge_items')

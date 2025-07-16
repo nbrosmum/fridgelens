@@ -33,6 +33,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
   File? _imageFile;
   final ImagePicker _imagePicker = ImagePicker();
   bool _removeImage = false;
+  bool _ignoreExpiry = false;
 
   final List<String> _categories = [
     'Vegetables',
@@ -46,6 +47,42 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     'Other',
   ];
 
+  // Default shelf life config
+  static const Map<String, Map<String, int>> defaultExpiryDays = {
+    'chiller': {
+      'Vegetables': 7,
+      'Fruits': 7,
+      'Dairy Products': 10,
+      'Meat & Poultry': 3,
+      'Bakery & Grains': 5,
+      'Drinks & Beverages': 14,
+      'Condiments & Sauces': 30,
+      'Frozen Food': 2,
+      'Other': 7,
+    },
+    'freezer': {
+      'Vegetables': 60,
+      'Fruits': 60,
+      'Dairy Products': 30,
+      'Meat & Poultry': 90,
+      'Bakery & Grains': 30,
+      'Drinks & Beverages': 60,
+      'Condiments & Sauces': 90,
+      'Frozen Food': 180,
+      'Other': 60,
+    },
+  };
+
+  void _updateExpiryByCategoryCompartment() {
+    final days = defaultExpiryDays[_selectedCompartment]?[_selectedCategory];
+    if (days != null) {
+      setState(() {
+        _expiryDate = DateTime.now().add(Duration(days: days));
+        _reminderDate = _expiryDate.subtract(const Duration(days: 1));
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,8 +94,10 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     if (!_categories.contains(_selectedCategory)) {
       _categories.add(_selectedCategory);
     }
-    // 初始化图片
+    // Initialize image
     _imageFile = null;
+    _ignoreExpiry = widget.item.ignoreExpiry;
+    _updateExpiryByCategoryCompartment(); // Also call once at init
   }
 
   @override
@@ -115,10 +154,13 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
       itemId: widget.item.id,
       name: _nameController.text.trim(),
       category: _selectedCategory,
+      expiryDate: _expiryDate,
       reminderDate: _reminderDate,
       compartment: _selectedCompartment,
       newImageFile: _imageFile,
-      removeImage: _removeImage, // 新增参数，表示是否移除图片
+      removeImage:
+          _removeImage, // New parameter, indicates whether to remove image
+      ignoreExpiry: _ignoreExpiry,
     );
     setState(() => _isLoading = false);
     if (mounted && result['success']) {
@@ -189,7 +231,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 图片选择区域
+                          // Image selection area
                           Center(
                             child: GestureDetector(
                               onTap: () {
@@ -346,6 +388,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                                 setState(() {
                                   _selectedCategory = value;
                                 });
+                                _updateExpiryByCategoryCompartment();
                               }
                             },
                           ),
@@ -385,11 +428,27 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                                   setState(() {
                                     _selectedCompartment = value;
                                   });
+                                  _updateExpiryByCategoryCompartment();
                                 }
                               },
                             ),
                             const SizedBox(height: 16),
                           ],
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _ignoreExpiry,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _ignoreExpiry = val ?? false;
+                                  });
+                                },
+                              ),
+                              const Text(
+                                'Ignore expiry & reminder for this item',
+                              ),
+                            ],
+                          ),
                           InkWell(
                             onTap: _selectExpiryDate,
                             child: InputDecorator(

@@ -269,6 +269,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
             ...categoryItems.map(
               (item) => FridgeItemTile(
                 item: item,
+                fridgeOwnerId: widget.fridge.ownerId,
                 onTap: () => _showItemDetailsDialog(item),
                 onStatusChange: _updateItemStatus,
                 onDelete: () => _deleteItem(item),
@@ -313,6 +314,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
         categoryItems.map(
           (item) => FridgeItemTile(
             item: item,
+            fridgeOwnerId: widget.fridge.ownerId,
             onTap: () => _showItemDetailsDialog(item),
             onStatusChange: _updateItemStatus,
             onDelete: () => _deleteItem(item),
@@ -532,7 +534,6 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
   }
 
   void _showItemDetailsDialog(FridgeItemModel item) {
-    // Implement item details dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -575,6 +576,25 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
             _buildItemDetail(
               'Reminder Date',
               '${item.reminderDate.day}/${item.reminderDate.month}/${item.reminderDate.year}',
+            ),
+            FutureBuilder<UserModel?>(
+              future: AuthService().getUserDataById(item.createdBy),
+              builder: (context, snapshot) {
+                final userName = snapshot.data?.displayName ?? 'Unknown User';
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Created by: ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      Expanded(child: Text(userName)),
+                    ],
+                  ),
+                );
+              },
             ),
           ],
         ),

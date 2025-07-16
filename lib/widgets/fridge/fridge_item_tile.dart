@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../models/fridge_item_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class FridgeItemTile extends StatelessWidget {
   final FridgeItemModel item;
+  final String? fridgeOwnerId;
   final VoidCallback? onTap;
   final Function(FridgeItemModel, String)? onStatusChange;
   final VoidCallback? onDelete;
@@ -11,6 +13,7 @@ class FridgeItemTile extends StatelessWidget {
   const FridgeItemTile({
     super.key,
     required this.item,
+    this.fridgeOwnerId,
     this.onTap,
     this.onStatusChange,
     this.onDelete,
@@ -19,6 +22,19 @@ class FridgeItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    String creatorLabel = '';
+    if (fridgeOwnerId != null && item.createdBy == fridgeOwnerId) {
+      creatorLabel = 'Owner';
+    } else if (item.createdBy == currentUserId) {
+      creatorLabel = 'Me';
+    } else if (item.createdBy.isEmpty) {
+      creatorLabel = '';
+    } else {
+      // Here you can determine ownerId by business logic, temporarily use Shared
+      creatorLabel = 'Shared';
+    }
+
     // Debug: Check if onEdit callback is provided
     if (onEdit != null) {
       print('FridgeItemTile: onEdit callback provided for item: ${item.name}');
@@ -115,6 +131,17 @@ class FridgeItemTile extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
+                    if (creatorLabel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Text(
+                          'Created by: $creatorLabel',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       children: [

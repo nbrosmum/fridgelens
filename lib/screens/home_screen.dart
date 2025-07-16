@@ -714,7 +714,7 @@ class _ProfileTabState extends State<ProfileTab> {
             ),
             const SizedBox(height: 20),
 
-            // 显示个人资料更新提醒
+            // Show profile update reminder
             if (_showProfileUpdateReminder)
               Container(
                 margin: const EdgeInsets.symmetric(

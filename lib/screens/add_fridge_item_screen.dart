@@ -30,6 +30,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   FridgeModel? _fridge;
   Interpreter? _interpreter;
   List<String> _labels = [];
+  bool _ignoreExpiry = false;
 
   final FridgeItemService _fridgeItemService = FridgeItemService();
   final FridgeService _fridgeService = FridgeService();
@@ -46,6 +47,32 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
     'Frozen Food',
     'Other',
   ];
+
+  // Default shelf life config
+  static const Map<String, Map<String, int>> defaultExpiryDays = {
+    'chiller': {
+      'Vegetables': 7,
+      'Fruits': 7,
+      'Dairy Products': 10,
+      'Meat & Poultry': 3,
+      'Bakery & Grains': 5,
+      'Drinks & Beverages': 14,
+      'Condiments & Sauces': 30,
+      'Frozen Food': 2,
+      'Other': 7,
+    },
+    'freezer': {
+      'Vegetables': 60,
+      'Fruits': 60,
+      'Dairy Products': 30,
+      'Meat & Poultry': 90,
+      'Bakery & Grains': 30,
+      'Drinks & Beverages': 60,
+      'Condiments & Sauces': 90,
+      'Frozen Food': 180,
+      'Other': 60,
+    },
+  };
 
   @override
   void initState() {
@@ -66,6 +93,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
         }
         // For 'both' type, keep default as 'chiller'
       });
+      _updateExpiryByCategoryCompartment();
     } catch (e) {
       // Handle error silently or show a message
       print('Error loading fridge info: $e');
@@ -199,6 +227,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
         expiryDate: _expiryDate,
         reminderDate: _reminderDate,
         compartment: _selectedCompartment,
+        ignoreExpiry: _ignoreExpiry,
       );
 
       if (mounted) {
@@ -242,6 +271,16 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   // Smart Insert button handler
   Future<void> _onSmartInsertPressed() async {
     _showImageSourceOptions(smartInsert: true);
+  }
+
+  void _updateExpiryByCategoryCompartment() {
+    final days = defaultExpiryDays[_selectedCompartment]?[_selectedCategory];
+    if (days != null) {
+      setState(() {
+        _expiryDate = DateTime.now().add(Duration(days: days));
+        _reminderDate = _expiryDate.subtract(const Duration(days: 1));
+      });
+    }
   }
 
   @override
@@ -346,14 +385,14 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                   if (value != null) {
                     setState(() {
                       _selectedCategory = value;
-                      // Auto-switch compartment if needed
-                      if (_fridge?.type == 'both' &&
-                          (value == 'Meat & Poultry' ||
-                              value == 'Frozen Food')) {
-                        _selectedCompartment = 'freezer';
-                      }
-                      // User can still manually change compartment
                     });
+                    _updateExpiryByCategoryCompartment();
+                    // Auto-switch compartment if needed
+                    if (_fridge?.type == 'both' &&
+                        (value == 'Meat & Poultry' || value == 'Frozen Food')) {
+                      _selectedCompartment = 'freezer';
+                    }
+                    // User can still manually change compartment
                   }
                 },
               ),
@@ -395,6 +434,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                       setState(() {
                         _selectedCompartment = value;
                       });
+                      _updateExpiryByCategoryCompartment();
                     }
                   },
                 ),
@@ -450,6 +490,20 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                         )
                       : const Text('Add Item'),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _ignoreExpiry,
+                    onChanged: (val) {
+                      setState(() {
+                        _ignoreExpiry = val ?? false;
+                      });
+                    },
+                  ),
+                  const Text('Ignore expiry & reminder for this item'),
+                ],
               ),
             ],
           ),
@@ -579,6 +633,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
             _selectedCompartment = 'freezer';
           }
         });
+        _updateExpiryByCategoryCompartment();
       }
     } else {
       setState(() {
