@@ -11,6 +11,7 @@ import '../widgets/fridge/add_contributor_dialog.dart';
 import 'add_fridge_item_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/fridge/edit_fridge_item_bottom_sheet.dart';
+import 'package:intl/intl.dart';
 
 class FridgeDetailScreen extends StatefulWidget {
   final FridgeModel fridge;
@@ -571,11 +572,11 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
             _buildItemDetail('Status', item.status),
             _buildItemDetail(
               'Expiry Date',
-              '${item.expiryDate.day}/${item.expiryDate.month}/${item.expiryDate.year}',
+              DateFormat('yyyy-MM-dd HH:mm').format(item.expiryDate),
             ),
             _buildItemDetail(
               'Reminder Date',
-              '${item.reminderDate.day}/${item.reminderDate.month}/${item.reminderDate.year}',
+              DateFormat('yyyy-MM-dd HH:mm').format(item.reminderDate),
             ),
             FutureBuilder<UserModel?>(
               future: AuthService().getUserDataById(item.createdBy),
@@ -622,6 +623,12 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
   }
 
   Future<void> _updateItemStatus(FridgeItemModel item, String newStatus) async {
+    print(
+      'Calling _updateItemStatus for item: ' +
+          item.name +
+          ', newStatus: ' +
+          newStatus,
+    );
     try {
       final result = await _fridgeItemService.updateItemStatus(
         itemId: item.id,

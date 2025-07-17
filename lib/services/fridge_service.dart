@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/fridge_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import '../utils/imagekit_config.dart';
 import 'fridge_item_service.dart';
 
@@ -111,13 +112,45 @@ class FridgeService {
           .where('fridgeId', isEqualTo: fridgeId)
           .get();
 
-      // 1. Delete all images in ImageKit folder
+      // 1. Check if any items are in history and copy their images to history folder
+      final historyQuery = await _firestore
+          .collection('history_items')
+          .where('fridgeId', isEqualTo: fridgeId)
+          .get();
+
+      for (var doc in historyQuery.docs) {
+        final itemData = doc.data();
+        final fileId = itemData['fileId'];
+        final imageUrl = itemData['imageUrl'];
+
+        // If the image is still in the original fridge folder, copy it to history folder
+        if (fileId != null &&
+            fileId.toString().isNotEmpty &&
+            imageUrl.isNotEmpty &&
+            imageUrl.contains('/$fridgeId/')) {
+          try {
+            final copyResult = await _copyImageToHistoryFolder(
+              fileId,
+              imageUrl,
+            );
+            if (copyResult != null) {
+              await _firestore.collection('history_items').doc(doc.id).update({
+                'imageUrl': copyResult['url'],
+                'fileId': copyResult['fileId'],
+              });
+            }
+          } catch (e) {
+            print('Error copying image to history folder: $e');
+          }
+        }
+      }
+
+      // 2. Delete all images in ImageKit folder
       for (var doc in itemsQuery.docs) {
         final itemData = doc.data();
         final fileId = itemData['fileId'];
         if (fileId != null && fileId.toString().isNotEmpty) {
           try {
-            // 这里假设你有FridgeItemService实例
             await FridgeItemService.deleteImageFromImageKit(fileId);
           } catch (e) {
             print('Error deleting image from ImageKit: $e');
@@ -280,6 +313,76 @@ class FridgeService {
       }
       return FridgeModel.fromMap(doc.data()!, doc.id);
     });
+  }
+
+  // Copy image to history folder when item is moved to history
+  Future<Map<String, dynamic>?> _copyImageToHistoryFolder(
+    String originalFileId,
+    String originalImageUrl,
+  ) async {
+    try {
+      if (originalFileId.isEmpty || originalImageUrl.isEmpty) {
+        return null;
+      }
+
+      // Download the original image
+      final response = await http.get(Uri.parse(originalImageUrl));
+      if (response.statusCode != 200) {
+        print('Failed to download original image: ${response.statusCode}');
+        return null;
+      }
+
+      // Create a temporary file
+      final tempDir = await Directory.systemTemp.createTemp(
+        'fridgelens_history',
+      );
+      final tempFile = File('${tempDir.path}/temp_image.jpg');
+      await tempFile.writeAsBytes(response.bodyBytes);
+
+      // Upload to history folder
+      final historyFolderPath = '${ImageKitConfig.uploadFolder}/history';
+
+      // Create multipart request
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse(ImageKitConfig.authenticationEndpoint),
+      );
+
+      // Add authorization header
+      request.headers['Authorization'] =
+          'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}';
+
+      // Add fields
+      request.fields['fileName'] =
+          '${DateTime.now().millisecondsSinceEpoch}_history_${originalFileId}';
+      request.fields['folder'] = historyFolderPath;
+
+      // Add file
+      request.files.add(
+        await http.MultipartFile.fromPath('file', tempFile.path),
+      );
+
+      // Send request
+      var uploadResponse = await request.send();
+      var responseData = await uploadResponse.stream.bytesToString();
+      var jsonResponse = json.decode(responseData);
+
+      // Clean up temp file
+      await tempFile.delete();
+      await tempDir.delete();
+
+      if (uploadResponse.statusCode == 200) {
+        return {'url': jsonResponse['url'], 'fileId': jsonResponse['fileId']};
+      } else {
+        print(
+          'Failed to upload image to history folder: ${jsonResponse['message'] ?? 'Upload failed'}',
+        );
+        return null;
+      }
+    } catch (e) {
+      print('Error copying image to history folder: $e');
+      return null;
+    }
   }
 
   // Check if user has access to a fridge

@@ -34,6 +34,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
   final ImagePicker _imagePicker = ImagePicker();
   bool _removeImage = false;
   bool _ignoreExpiry = false;
+  bool _isInitialized = false;
 
   final List<String> _categories = [
     'Vegetables',
@@ -97,7 +98,8 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     // Initialize image
     _imageFile = null;
     _ignoreExpiry = widget.item.ignoreExpiry;
-    _updateExpiryByCategoryCompartment(); // Also call once at init
+    // Mark as initialized to preserve original dates
+    _isInitialized = true;
   }
 
   @override
@@ -106,32 +108,63 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     super.dispose();
   }
 
-  Future<void> _selectExpiryDate() async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectExpiryDateTime() async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _expiryDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
-    if (picked != null && picked != _expiryDate) {
-      setState(() {
-        _expiryDate = picked;
-        _reminderDate = picked.subtract(const Duration(days: 1));
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_expiryDate),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _expiryDate = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+          // Update reminder date to 1 day before expiry, keeping the same time
+          _reminderDate = DateTime(
+            _expiryDate.year,
+            _expiryDate.month,
+            _expiryDate.day - 1,
+            _expiryDate.hour,
+            _expiryDate.minute,
+          );
+        });
+      }
     }
   }
 
-  Future<void> _selectReminderDate() async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _selectReminderDateTime() async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _reminderDate,
       firstDate: DateTime.now(),
       lastDate: _expiryDate,
     );
-    if (picked != null && picked != _reminderDate) {
-      setState(() {
-        _reminderDate = picked;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_reminderDate),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          _reminderDate = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -384,7 +417,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                               );
                             }).toList(),
                             onChanged: (value) {
-                              if (value != null) {
+                              if (value != null && _isInitialized) {
                                 setState(() {
                                   _selectedCategory = value;
                                 });
@@ -424,7 +457,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                                 ),
                               ],
                               onChanged: (value) {
-                                if (value != null) {
+                                if (value != null && _isInitialized) {
                                   setState(() {
                                     _selectedCompartment = value;
                                   });
@@ -450,7 +483,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                             ],
                           ),
                           InkWell(
-                            onTap: _selectExpiryDate,
+                            onTap: _selectExpiryDateTime,
                             child: InputDecorator(
                               decoration: const InputDecoration(
                                 labelText: 'Expiry Date',
@@ -458,13 +491,15 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                                 prefixIcon: Icon(Icons.calendar_today),
                               ),
                               child: Text(
-                                DateFormat('MMM d, yyyy').format(_expiryDate),
+                                DateFormat(
+                                  'MMM d, yyyy HH:mm',
+                                ).format(_expiryDate),
                               ),
                             ),
                           ),
                           const SizedBox(height: 16),
                           InkWell(
-                            onTap: _selectReminderDate,
+                            onTap: _selectReminderDateTime,
                             child: InputDecorator(
                               decoration: const InputDecoration(
                                 labelText: 'Reminder Date',
@@ -472,7 +507,9 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                                 prefixIcon: Icon(Icons.notifications),
                               ),
                               child: Text(
-                                DateFormat('MMM d, yyyy').format(_reminderDate),
+                                DateFormat(
+                                  'MMM d, yyyy HH:mm',
+                                ).format(_reminderDate),
                               ),
                             ),
                           ),

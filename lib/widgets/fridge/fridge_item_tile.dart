@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/fridge_item_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class FridgeItemTile extends StatelessWidget {
   final FridgeItemModel item;
@@ -55,19 +56,9 @@ class FridgeItemTile extends StatelessWidget {
 
     switch (item.status) {
       case 'fresh':
-        if (difference < 0) {
-          statusColor = Colors.red;
-          statusText = 'Expired';
-          statusIcon = Icons.error_outline;
-        } else if (difference <= 3) {
-          statusColor = Colors.orange;
-          statusText = 'Expiring Soon';
-          statusIcon = Icons.warning_amber_outlined;
-        } else {
-          statusColor = Colors.green;
-          statusText = 'Fresh';
-          statusIcon = Icons.check_circle_outline;
-        }
+        statusColor = Colors.green;
+        statusText = 'Fresh';
+        statusIcon = Icons.check_circle_outline;
         break;
       case 'almost_expiry':
         statusColor = Colors.orange;
@@ -78,11 +69,6 @@ class FridgeItemTile extends StatelessWidget {
         statusColor = Colors.red;
         statusText = 'Expired';
         statusIcon = Icons.error_outline;
-        break;
-      case 'used':
-        statusColor = Colors.grey;
-        statusText = 'Used';
-        statusIcon = Icons.check_circle_outline;
         break;
       default:
         statusColor = Colors.green;
@@ -203,7 +189,7 @@ class FridgeItemTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Expires: ${item.expiryDate.day}/${item.expiryDate.month}/${item.expiryDate.year}',
+                      'Expires: ${DateFormat('yyyy-MM-dd HH:mm').format(item.expiryDate)}',
                       style: TextStyle(
                         fontSize: 12,
                         color: difference < 0 ? Colors.red : Colors.grey[600],
@@ -218,15 +204,31 @@ class FridgeItemTile extends StatelessWidget {
                 PopupMenuButton<String>(
                   onSelected: (value) {
                     print(
-                      'Menu option selected: $value for item: ${item.name}',
+                      'PopupMenu selected: $value for item: ${item.name}, current status: ${item.status}',
+                    );
+                    print(
+                      'onStatusChange callback is null? ' +
+                          (onStatusChange == null).toString(),
                     );
                     if (value == 'delete' && onDelete != null) {
                       onDelete!();
                     } else if (value == 'used' && onStatusChange != null) {
+                      print('onStatusChange called with used');
+                      onStatusChange!(item, value);
+                    } else if (value == 'clear' && onStatusChange != null) {
+                      print('onStatusChange called with clear');
+                      onStatusChange!(item, value);
+                    } else if (value == 'expired' && onStatusChange != null) {
+                      print('onStatusChange called with expired');
                       onStatusChange!(item, value);
                     } else if (value == 'edit' && onEdit != null) {
-                      print('Edit option selected for item: ${item.name}');
+                      print('Edit option selected for item: ' + item.name);
                       onEdit!();
+                    } else {
+                      print(
+                        'No action taken for value: $value, onStatusChange is null: ' +
+                            (onStatusChange == null).toString(),
+                      );
                     }
                   },
                   itemBuilder: (context) => [
@@ -241,21 +243,39 @@ class FridgeItemTile extends StatelessWidget {
                           ],
                         ),
                       ),
-                    if (onStatusChange != null && item.status != 'used')
-                      const PopupMenuItem(
-                        value: 'used',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.green,
-                              size: 18,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Mark as Used'),
-                          ],
+                    if (onStatusChange != null && item.status != 'used') ...[
+                      if (item.status == 'expired')
+                        PopupMenuItem(
+                          value: 'clear',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Mark as Clear'),
+                            ],
+                          ),
                         ),
-                      ),
+                      if (item.status == 'fresh' ||
+                          item.status == 'almost_expiry')
+                        PopupMenuItem(
+                          value: 'used',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text('Mark as Used'),
+                            ],
+                          ),
+                        ),
+                    ],
                     if (onDelete != null)
                       const PopupMenuItem(
                         value: 'delete',

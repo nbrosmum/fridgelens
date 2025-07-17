@@ -178,34 +178,58 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   }
 
   Future<void> _selectExpiryDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _expiryDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
-
-    if (picked != null && picked != _expiryDate) {
-      setState(() {
-        _expiryDate = picked;
-        // Set reminder date to 1 day before expiry by default
-        _reminderDate = picked.subtract(const Duration(days: 1));
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_expiryDate),
+      );
+      if (pickedTime != null) {
+        final DateTime combined = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        setState(() {
+          _expiryDate = combined;
+          // Set reminder date为过期前一天同一时间
+          _reminderDate = combined.subtract(const Duration(days: 1));
+        });
+      }
     }
   }
 
   Future<void> _selectReminderDate() async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _reminderDate,
       firstDate: DateTime.now(),
       lastDate: _expiryDate,
     );
-
-    if (picked != null && picked != _reminderDate) {
-      setState(() {
-        _reminderDate = picked;
-      });
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_reminderDate),
+      );
+      if (pickedTime != null) {
+        final DateTime combined = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        setState(() {
+          _reminderDate = combined;
+        });
+      }
     }
   }
 
@@ -450,7 +474,9 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.calendar_today),
                   ),
-                  child: Text(DateFormat('MMM d, yyyy').format(_expiryDate)),
+                  child: Text(
+                    DateFormat('yyyy-MM-dd HH:mm').format(_expiryDate),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -464,7 +490,9 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.notifications),
                   ),
-                  child: Text(DateFormat('MMM d, yyyy').format(_reminderDate)),
+                  child: Text(
+                    DateFormat('yyyy-MM-dd HH:mm').format(_reminderDate),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),

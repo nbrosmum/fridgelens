@@ -13,6 +13,7 @@ import 'settings_screen.dart';
 import 'fridge_list_screen.dart';
 import 'friend_list_screen.dart';
 import 'notification_screen.dart';
+import 'history_screen.dart';
 import '../services/friend_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/shopping/add_shopping_item_bottom_sheet.dart';
@@ -761,6 +762,19 @@ class _ProfileTabState extends State<ProfileTab> {
                       ),
                     );
                   },
+                );
+              },
+            ),
+            _buildProfileOption(
+              context,
+              Icons.history,
+              'History',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryScreen(),
+                  ),
                 );
               },
             ),

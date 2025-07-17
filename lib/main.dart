@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/register_screen.dart';
@@ -15,6 +16,7 @@ import 'screens/fridge_list_screen.dart';
 import 'screens/add_fridge_screen.dart';
 import 'utils/constants.dart';
 import 'services/auth_service.dart';
+import 'services/fridge_item_service.dart';
 
 // Global instance of AuthService for persistence
 final AuthService authService = AuthService();
@@ -49,8 +51,38 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Timer? _statusUpdateTimer;
+  final FridgeItemService _fridgeItemService = FridgeItemService();
+
+  @override
+  void initState() {
+    super.initState();
+    _startStatusUpdateTimer();
+  }
+
+  @override
+  void dispose() {
+    _statusUpdateTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startStatusUpdateTimer() {
+    // Update status immediately when app starts
+    _fridgeItemService.updateAllItemsStatus();
+
+    // Update status every 5 minutes
+    _statusUpdateTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+      _fridgeItemService.updateAllItemsStatus();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

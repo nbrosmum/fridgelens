@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
+import '../../utils/validators.dart';
 
 class ChangePasswordForm extends StatefulWidget {
   final Function(String currentPassword, String newPassword) onSubmit;
@@ -49,11 +50,11 @@ class _ChangePasswordFormState extends State<ChangePasswordForm> {
     final password = _newPasswordController.text;
     setState(() {
       _showValidation = true;
-      _hasMinLength = password.length >= 8;
-      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
-      _hasLowercase = password.contains(RegExp(r'[a-z]'));
-      _hasDigit = password.contains(RegExp(r'[0-9]'));
-      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      _hasMinLength = Validators.hasMinLength(password);
+      _hasUppercase = Validators.hasUppercase(password);
+      _hasLowercase = Validators.hasLowercase(password);
+      _hasDigit = Validators.hasDigit(password);
+      _hasSpecialChar = Validators.hasSpecialChar(password);
       _checkPasswordsMatch();
     });
   }
