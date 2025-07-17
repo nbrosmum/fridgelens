@@ -30,7 +30,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   FridgeModel? _fridge;
   Interpreter? _interpreter;
   List<String> _labels = [];
-  bool _ignoreExpiry = false;
 
   final FridgeItemService _fridgeItemService = FridgeItemService();
   final FridgeService _fridgeService = FridgeService();
@@ -251,7 +250,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
         expiryDate: _expiryDate,
         reminderDate: _reminderDate,
         compartment: _selectedCompartment,
-        ignoreExpiry: _ignoreExpiry,
       );
 
       if (mounted) {
@@ -518,20 +516,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
                         )
                       : const Text('Add Item'),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Checkbox(
-                    value: _ignoreExpiry,
-                    onChanged: (val) {
-                      setState(() {
-                        _ignoreExpiry = val ?? false;
-                      });
-                    },
-                  ),
-                  const Text('Ignore expiry & reminder for this item'),
-                ],
               ),
             ],
           ),

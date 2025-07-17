@@ -13,7 +13,6 @@ class HistoryItemModel {
   final String createdBy;
   final DateTime createdAt;
   final String compartment;
-  final bool ignoreExpiry;
   final DateTime usedAt; // Time of use
   HistoryItemModel({
     required this.id,
@@ -28,7 +27,6 @@ class HistoryItemModel {
     required this.createdBy,
     required this.createdAt,
     required this.compartment,
-    this.ignoreExpiry = false,
     required this.usedAt,
   });
 
@@ -46,7 +44,6 @@ class HistoryItemModel {
       createdBy: map['createdBy'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       compartment: map['compartment'] ?? 'chiller',
-      ignoreExpiry: map['ignoreExpiry'] ?? false,
       usedAt: (map['usedAt'] as Timestamp).toDate(),
     );
   }
@@ -64,7 +61,6 @@ class HistoryItemModel {
       'createdBy': createdBy,
       'createdAt': createdAt,
       'compartment': compartment,
-      'ignoreExpiry': ignoreExpiry,
       'usedAt': usedAt,
     };
   }
@@ -80,7 +76,6 @@ class HistoryItemModel {
     String? status,
     String? createdBy,
     String? compartment,
-    bool? ignoreExpiry,
     DateTime? usedAt,
   }) {
     return HistoryItemModel(
@@ -96,7 +91,6 @@ class HistoryItemModel {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt,
       compartment: compartment ?? this.compartment,
-      ignoreExpiry: ignoreExpiry ?? this.ignoreExpiry,
       usedAt: usedAt ?? this.usedAt,
     );
   }

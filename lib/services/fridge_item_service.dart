@@ -140,7 +140,6 @@ class FridgeItemService {
     DateTime? reminderDate,
     String status = 'fresh',
     String compartment = 'chiller',
-    bool ignoreExpiry = false,
   }) async {
     try {
       // Check if user has access to the fridge
@@ -196,7 +195,6 @@ class FridgeItemService {
         'createdBy': currentUserId,
         'createdAt': FieldValue.serverTimestamp(),
         'compartment': compartment,
-        'ignoreExpiry': ignoreExpiry,
       });
 
       return {
@@ -221,7 +219,6 @@ class FridgeItemService {
     String? status,
     String? compartment,
     bool removeImage = false, // New parameter
-    bool? ignoreExpiry,
   }) async {
     try {
       // Get the item first to check access
@@ -288,7 +285,6 @@ class FridgeItemService {
       if (reminderDate != null) updateData['reminderDate'] = reminderDate;
       if (newStatus != null) updateData['status'] = newStatus;
       if (compartment != null) updateData['compartment'] = compartment;
-      if (ignoreExpiry != null) updateData['ignoreExpiry'] = ignoreExpiry;
       if (expiryDate != null) updateData['expiryDate'] = expiryDate;
 
       await _firestore
@@ -436,7 +432,6 @@ class FridgeItemService {
           'createdBy': itemData['createdBy'],
           'createdAt': itemData['createdAt'],
           'compartment': itemData['compartment'],
-          'ignoreExpiry': itemData['ignoreExpiry'],
           'usedAt': FieldValue.serverTimestamp(),
         };
 
@@ -535,12 +530,8 @@ class FridgeItemService {
   Future<void> updateAllItemsStatus() async {
     print('updateAllItemsStatus called');
     try {
-      // Get all items that are not marked as 'used' or 'ignoreExpiry'
-      final querySnapshot = await _firestore
-          .collection('fridge_items')
-          .where('status', isNotEqualTo: 'used')
-          .where('ignoreExpiry', isEqualTo: false)
-          .get();
+      // Get all items that are not marked as 'used'
+      final querySnapshot = await _firestore.collection('fridge_items').get();
 
       final batch = _firestore.batch();
       int updatedCount = 0;
@@ -562,6 +553,10 @@ class FridgeItemService {
 
         // Calculate new status
         final newStatus = _calculateStatus(expiryDate, reminderDate);
+        //for debug
+        print(
+          '[updateAllItemsStatus] item: ${doc.id}, now: ${DateTime.now()} reminderDate: ${reminderDate} expiryDate: ${expiryDate} currentStatus: ${currentStatus} newStatus: ${newStatus}',
+        );
 
         // Only update if status has changed
         if (newStatus != currentStatus) {

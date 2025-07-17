@@ -39,7 +39,6 @@ class HistoryService {
         'createdBy': item.createdBy,
         'createdAt': item.createdAt,
         'compartment': item.compartment,
-        'ignoreExpiry': item.ignoreExpiry,
         'usedAt': FieldValue.serverTimestamp(),
       };
 

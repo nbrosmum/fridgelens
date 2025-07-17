@@ -15,8 +15,13 @@ import 'package:intl/intl.dart';
 
 class FridgeDetailScreen extends StatefulWidget {
   final FridgeModel fridge;
+  final String? initialFilter;
 
-  const FridgeDetailScreen({super.key, required this.fridge});
+  const FridgeDetailScreen({
+    super.key,
+    required this.fridge,
+    this.initialFilter,
+  });
 
   @override
   State<FridgeDetailScreen> createState() => _FridgeDetailScreenState();
@@ -36,6 +41,9 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    if (widget.initialFilter != null) {
+      _selectedFilter = widget.initialFilter!;
+    }
   }
 
   @override

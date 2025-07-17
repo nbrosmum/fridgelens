@@ -12,7 +12,6 @@ class FridgeItemModel {
   final String createdBy; // User ID who added this item
   final DateTime createdAt;
   final String compartment; // "freezer" or "chiller"
-  final bool ignoreExpiry; // Whether to ignore expiry check
 
   FridgeItemModel({
     required this.id,
@@ -26,7 +25,6 @@ class FridgeItemModel {
     required this.createdBy,
     required this.createdAt,
     required this.compartment,
-    this.ignoreExpiry = false,
   });
 
   factory FridgeItemModel.fromMap(Map<String, dynamic> map, String id) {
@@ -42,7 +40,6 @@ class FridgeItemModel {
       createdBy: map['createdBy'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       compartment: map['compartment'] ?? 'chiller',
-      ignoreExpiry: map['ignoreExpiry'] ?? false,
     );
   }
 
@@ -58,7 +55,6 @@ class FridgeItemModel {
       'createdBy': createdBy,
       'createdAt': createdAt,
       'compartment': compartment,
-      'ignoreExpiry': ignoreExpiry,
     };
   }
 
@@ -72,7 +68,6 @@ class FridgeItemModel {
     String? status,
     String? createdBy,
     String? compartment,
-    bool? ignoreExpiry,
   }) {
     return FridgeItemModel(
       id: id,
@@ -86,7 +81,6 @@ class FridgeItemModel {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt,
       compartment: compartment ?? this.compartment,
-      ignoreExpiry: ignoreExpiry ?? this.ignoreExpiry,
     );
   }
 }

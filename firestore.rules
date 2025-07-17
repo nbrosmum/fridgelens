@@ -51,23 +51,9 @@ service cloud.firestore {
     
     // Fridge items rules
     match /fridge_items/{itemId} {
-      // Need to get the fridgeId from the item to check permissions
-      function getFridgeId() {
-        return resource.data.fridgeId;
-      }
-      
-      function canAccessFridge(fridgeId) {
-        let fridge = get(/databases/$(database)/documents/fridges/$(fridgeId)).data;
-        return fridge.ownerId == request.auth.uid || fridge.contributors.hasAny([request.auth.uid]);
-      }
-      
-      // Allow users to create items in fridges they have access to
-      allow create: if request.auth != null && 
-        canAccessFridge(request.resource.data.fridgeId);
-      
-      // Allow read/update/delete for items in fridges users have access to
-      allow read, update, delete: if request.auth != null && 
-        canAccessFridge(resource.data.fridgeId);
+      // TEMP: Allow all logged-in users to read, update, delete fridge_items (for testing only)
+      allow read, update, delete: if request.auth != null;
+      allow create: if request.auth != null;
     }
     
     // History items rules

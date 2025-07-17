@@ -33,7 +33,6 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
   File? _imageFile;
   final ImagePicker _imagePicker = ImagePicker();
   bool _removeImage = false;
-  bool _ignoreExpiry = false;
   bool _isInitialized = false;
 
   final List<String> _categories = [
@@ -97,7 +96,6 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     }
     // Initialize image
     _imageFile = null;
-    _ignoreExpiry = widget.item.ignoreExpiry;
     // Mark as initialized to preserve original dates
     _isInitialized = true;
   }
@@ -193,7 +191,6 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
       newImageFile: _imageFile,
       removeImage:
           _removeImage, // New parameter, indicates whether to remove image
-      ignoreExpiry: _ignoreExpiry,
     );
     setState(() => _isLoading = false);
     if (mounted && result['success']) {
@@ -467,21 +464,6 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                             ),
                             const SizedBox(height: 16),
                           ],
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _ignoreExpiry,
-                                onChanged: (val) {
-                                  setState(() {
-                                    _ignoreExpiry = val ?? false;
-                                  });
-                                },
-                              ),
-                              const Text(
-                                'Ignore expiry & reminder for this item',
-                              ),
-                            ],
-                          ),
                           InkWell(
                             onTap: _selectExpiryDateTime,
                             child: InputDecorator(

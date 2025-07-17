@@ -26,6 +26,7 @@ import '../services/fridge_service.dart';
 import '../services/fridge_item_service.dart';
 import '../models/fridge_model.dart';
 import '../models/fridge_item_model.dart';
+import '../widgets/home/expiry_tracker_list.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,8 +38,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeTab(),
+  // Use GlobalKey to access HomeTabState
+  final GlobalKey<_HomeTabState> _homeTabKey = GlobalKey<_HomeTabState>();
+
+  late final List<Widget> _screens = [
+    HomeTab(key: _homeTabKey),
     const FridgeTab(),
     const ShoppingListTab(),
     const ProfileTab(),
@@ -48,6 +52,14 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _selectedIndex = index;
     });
+    // If Home tab is tapped, trigger refreshAll
+    if (index == 0) {
+      _homeTabKey.currentState?._refreshAll();
+    }
+    // If Fridge tab is tapped, update all fridge item status
+    if (index == 1) {
+      FridgeItemService().updateAllItemsStatus();
+    }
   }
 
   @override
@@ -145,6 +157,37 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   String _filter = 'Week'; // 'Week', 'Month', 'Year'
+  bool _isRefreshing = false;
+
+  // Refresh all components on the home page
+  Future<void> _refreshAll() async {
+    setState(() {
+      _isRefreshing = true;
+    });
+    // Optionally: call backend services to sync status/data
+    try {
+      await Future.wait([
+        // Add any service refresh methods here if needed
+        // Example: await FridgeItemService().updateAllItemsStatus(),
+        // Example: await NotificationService().refresh(),
+        Future.delayed(
+          const Duration(milliseconds: 500),
+        ), // Simulate refresh delay
+      ]);
+    } catch (e) {
+      // Handle error if needed
+    }
+    setState(() {
+      _isRefreshing = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto refresh when page loads
+    _refreshAll();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +222,16 @@ class _HomeTabState extends State<HomeTab> {
                 ],
               );
             },
+          ),
+          IconButton(
+            icon: _isRefreshing
+                ? const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: _isRefreshing ? null : _refreshAll,
           ),
         ],
         backgroundColor: AppColors.primary,
@@ -377,6 +430,8 @@ class _HomeTabState extends State<HomeTab> {
               // Add summary cards
               const SizedBox(height: 16),
               _HomeSummaryCards(),
+              const SizedBox(height: 16),
+              ExpiryTrackerList(),
             ],
           ),
         ),
@@ -1108,8 +1163,10 @@ class _HomeSummaryCards extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             // Merge all fridge_items
+            final userId = FridgeItemService().currentUserId;
             final allItems = (itemsSnapshot.data ?? [])
                 .expand((x) => x)
+                .where((item) => item.createdBy == userId)
                 .toList();
             return StreamBuilder<List<HistoryItemModel>>(
               stream: historyStream,
