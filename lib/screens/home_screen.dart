@@ -17,6 +17,10 @@ import 'history_screen.dart';
 import '../services/friend_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/shopping/add_shopping_item_bottom_sheet.dart';
+import '../widgets/home/fridge_usage_chart.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../services/history_service.dart';
+import '../models/history_item_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -127,20 +131,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class HomeTab extends StatelessWidget {
+class HomeTab extends StatefulWidget {
   const HomeTab({super.key});
 
-  static void _showNotificationsScreen(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const NotificationScreen()),
-    );
-  }
+  @override
+  State<HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<HomeTab> {
+  String _filter = 'Week'; // 'Week', 'Month', 'Year'
 
   @override
   Widget build(BuildContext context) {
-    User? user = FirebaseAuth.instance.currentUser;
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppHeader(
@@ -177,46 +179,207 @@ class HomeTab extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Filter dropdown
+              Row(
                 children: [
-                  Text(
-                    'Welcome, ${user?.displayName ?? 'User'}!',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                   const Text(
-                    'This is the home page of FridgeLens',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    'Show by:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(width: 8),
+                  DropdownButton<String>(
+                    value: _filter,
+                    items: const [
+                      DropdownMenuItem(value: 'Week', child: Text('Week')),
+                      DropdownMenuItem(value: 'Month', child: Text('Month')),
+                      DropdownMenuItem(value: 'Year', child: Text('Year')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _filter = value);
+                    },
                   ),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              // Fridge usage chart
+              Text(
+                'Fridge Usage Overview',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 12),
+              StreamBuilder<List<HistoryItemModel>>(
+                stream: HistoryService().getUserHistory(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  final history = snapshot.data ?? [];
+                  final now = DateTime.now();
+                  List<String> xLabels = [];
+                  List<String> xDates = [];
+                  List<FlSpot> usedSpots = [];
+                  List<FlSpot> clearSpots = [];
+                  String label = _filter;
+                  if (_filter == 'Week') {
+                    final startOfWeek = now.subtract(
+                      Duration(days: now.weekday - 1),
+                    );
+                    xLabels = List.generate(
+                      7,
+                      (i) =>
+                          ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][i],
+                    );
+                    xDates = List.generate(7, (i) {
+                      final day = startOfWeek.add(Duration(days: i));
+                      return "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
+                    });
+                    usedSpots = List.generate(7, (i) {
+                      final day = startOfWeek.add(Duration(days: i));
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'used' &&
+                                h.usedAt.year == day.year &&
+                                h.usedAt.month == day.month &&
+                                h.usedAt.day == day.day,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                    clearSpots = List.generate(7, (i) {
+                      final day = startOfWeek.add(Duration(days: i));
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'clear' &&
+                                h.usedAt.year == day.year &&
+                                h.usedAt.month == day.month &&
+                                h.usedAt.day == day.day,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                  } else if (_filter == 'Month') {
+                    final daysInMonth = DateTime(
+                      now.year,
+                      now.month + 1,
+                      0,
+                    ).day;
+                    xLabels = List.generate(
+                      daysInMonth,
+                      (i) => (i + 1).toString(),
+                    );
+                    xDates = List.generate(daysInMonth, (i) {
+                      final day = DateTime(now.year, now.month, i + 1);
+                      return "${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}";
+                    });
+                    usedSpots = List.generate(daysInMonth, (i) {
+                      final day = DateTime(now.year, now.month, i + 1);
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'used' &&
+                                h.usedAt.year == day.year &&
+                                h.usedAt.month == day.month &&
+                                h.usedAt.day == day.day,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                    clearSpots = List.generate(daysInMonth, (i) {
+                      final day = DateTime(now.year, now.month, i + 1);
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'clear' &&
+                                h.usedAt.year == day.year &&
+                                h.usedAt.month == day.month &&
+                                h.usedAt.day == day.day,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                  } else if (_filter == 'Year') {
+                    xLabels = List.generate(
+                      12,
+                      (i) => [
+                        'Jan',
+                        'Feb',
+                        'Mar',
+                        'Apr',
+                        'May',
+                        'Jun',
+                        'Jul',
+                        'Aug',
+                        'Sep',
+                        'Oct',
+                        'Nov',
+                        'Dec',
+                      ][i],
+                    );
+                    xDates = List.generate(
+                      12,
+                      (i) =>
+                          "${now.year}-${(i + 1).toString().padLeft(2, '0')}",
+                    );
+                    usedSpots = List.generate(12, (i) {
+                      final month = i + 1;
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'used' &&
+                                h.usedAt.year == now.year &&
+                                h.usedAt.month == month,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                    clearSpots = List.generate(12, (i) {
+                      final month = i + 1;
+                      final count = history
+                          .where(
+                            (h) =>
+                                h.status == 'clear' &&
+                                h.usedAt.year == now.year &&
+                                h.usedAt.month == month,
+                          )
+                          .length;
+                      return FlSpot(i.toDouble(), count.toDouble());
+                    });
+                  }
+                  return FridgeUsageChart(
+                    usedSpots: usedSpots,
+                    clearSpots: clearSpots,
+                    filterLabel: label,
+                    xLabels: xLabels,
+                    xDates: xDates,
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  static void _showNotificationsScreen(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const NotificationScreen()),
     );
   }
 }
