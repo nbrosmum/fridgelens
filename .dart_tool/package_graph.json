@@ -7,6 +7,7 @@
       "name": "fridgelens",
       "version": "1.0.0+1",
       "dependencies": [
+        "async",
         "cloud_firestore",
         "cupertino_icons",
         "firebase_auth",
@@ -61,6 +62,14 @@
         "test_api",
         "vector_math",
         "vm_service"
+      ]
+    },
+    {
+      "name": "async",
+      "version": "2.13.0",
+      "dependencies": [
+        "collection",
+        "meta"
       ]
     },
     {
@@ -309,14 +318,6 @@
       "dependencies": [
         "source_span",
         "string_scanner"
-      ]
-    },
-    {
-      "name": "async",
-      "version": "2.13.0",
-      "dependencies": [
-        "collection",
-        "meta"
       ]
     },
     {

@@ -21,6 +21,11 @@ import '../widgets/home/fridge_usage_chart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/history_service.dart';
 import '../models/history_item_model.dart';
+import 'package:async/async.dart';
+import '../services/fridge_service.dart';
+import '../services/fridge_item_service.dart';
+import '../models/fridge_model.dart';
+import '../models/fridge_item_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -369,6 +374,9 @@ class _HomeTabState extends State<HomeTab> {
                   );
                 },
               ),
+              // Add summary cards
+              const SizedBox(height: 16),
+              _HomeSummaryCards(),
             ],
           ),
         ),
@@ -1047,6 +1055,140 @@ class _ProfileTabState extends State<ProfileTab> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _HomeSummaryCards extends StatelessWidget {
+  const _HomeSummaryCards();
+
+  @override
+  Widget build(BuildContext context) {
+    // Get all fridge IDs
+    final fridgeStream = FridgeService().getFridges();
+    // Get user history stream
+    final historyStream = HistoryService().getUserHistory();
+    return StreamBuilder<List<FridgeModel>>(
+      stream: fridgeStream,
+      builder: (context, fridgeSnapshot) {
+        if (fridgeSnapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final fridges = fridgeSnapshot.data ?? [];
+        if (fridges.isEmpty) {
+          return Row(
+            children: [
+              _buildCard(
+                context,
+                Icons.kitchen,
+                'Total in Fridge',
+                '0',
+                Colors.blue,
+              ),
+              const SizedBox(width: 16),
+              _buildCard(
+                context,
+                Icons.delete_forever,
+                'Expired/Wasted',
+                '0',
+                Colors.red,
+              ),
+            ],
+          );
+        }
+        // Merge all fridge_items streams
+        final fridgeIds = fridges.map((f) => f.id).toList();
+        return StreamBuilder<List<List<FridgeItemModel>>>(
+          stream: StreamZip(
+            fridgeIds.map((id) => FridgeItemService().getFridgeItems(id)),
+          ),
+          builder: (context, itemsSnapshot) {
+            if (itemsSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            // Merge all fridge_items
+            final allItems = (itemsSnapshot.data ?? [])
+                .expand((x) => x)
+                .toList();
+            return StreamBuilder<List<HistoryItemModel>>(
+              stream: historyStream,
+              builder: (context, historySnapshot) {
+                final history = historySnapshot.data ?? [];
+                final wastedCount = history
+                    .where((h) => h.status == 'clear')
+                    .length;
+                return Row(
+                  children: [
+                    Expanded(
+                      child: _buildCard(
+                        context,
+                        Icons.kitchen,
+                        'Total in Fridge',
+                        allItems.length.toString(),
+                        Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildCard(
+                        context,
+                        Icons.delete_forever,
+                        'Expired/Wasted',
+                        wastedCount.toString(),
+                        Colors.red,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: color.withOpacity(0.15)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 32),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+        ],
       ),
     );
   }
