@@ -14,7 +14,7 @@ class HistoryItemModel {
   final DateTime createdAt;
   final String compartment;
   final bool ignoreExpiry;
-  final DateTime usedAt; // 使用时间
+  final DateTime usedAt; // Time of use
   HistoryItemModel({
     required this.id,
     required this.fridgeId,

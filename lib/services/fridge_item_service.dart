@@ -310,7 +310,7 @@ class FridgeItemService {
     if (now.isAfter(expiryDate) || now.isAtSameMomentAs(expiryDate)) {
       return 'expired';
     }
-    // Use reminderDate if provided，否则默认提前3天
+    // Use reminderDate if provided, otherwise default to 3 days in advance
     final reminder =
         reminderDate ?? expiryDate.subtract(const Duration(days: 3));
     if ((now.isAfter(reminder) || now.isAtSameMomentAs(reminder)) &&

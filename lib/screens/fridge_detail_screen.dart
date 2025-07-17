@@ -65,7 +65,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
             tooltip: 'Refresh Item Status',
             onPressed: () async {
               await _fridgeItemService.updateAllItemsStatus();
-              setState(() {}); // 触发UI刷新
+              setState(() {}); // Trigger UI refresh
             },
           ),
           PopupMenuButton<String>(

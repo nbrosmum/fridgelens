@@ -199,7 +199,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
         );
         setState(() {
           _expiryDate = combined;
-          // Set reminder date为过期前一天同一时间
+          // Set reminder date to one day before expiry at the same time
           _reminderDate = combined.subtract(const Duration(days: 1));
         });
       }
