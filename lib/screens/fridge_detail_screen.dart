@@ -60,6 +60,14 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
               onPressed: _showAddContributorDialog,
               tooltip: 'Add Contributors',
             ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Item Status',
+            onPressed: () async {
+              await _fridgeItemService.updateAllItemsStatus();
+              setState(() {}); // 触发UI刷新
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               setState(() {

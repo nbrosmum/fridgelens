@@ -179,43 +179,4 @@ class HistoryService {
       return false;
     }
   }
-
-  // Get history statistics
-  Future<Map<String, dynamic>> getHistoryStatistics() async {
-    try {
-      final now = DateTime.now();
-      final lastWeek = now.subtract(const Duration(days: 7));
-      final lastMonth = now.subtract(const Duration(days: 30));
-
-      // Get total items used
-      final totalQuery = await _firestore
-          .collection('history_items')
-          .where('createdBy', isEqualTo: currentUserId)
-          .get();
-
-      // Get items used in last week
-      final lastWeekQuery = await _firestore
-          .collection('history_items')
-          .where('createdBy', isEqualTo: currentUserId)
-          .where('usedAt', isGreaterThanOrEqualTo: lastWeek)
-          .get();
-
-      // Get items used in last month
-      final lastMonthQuery = await _firestore
-          .collection('history_items')
-          .where('createdBy', isEqualTo: currentUserId)
-          .where('usedAt', isGreaterThanOrEqualTo: lastMonth)
-          .get();
-
-      return {
-        'success': true,
-        'totalItems': totalQuery.docs.length,
-        'lastWeekItems': lastWeekQuery.docs.length,
-        'lastMonthItems': lastMonthQuery.docs.length,
-      };
-    } catch (e) {
-      print('Error getting history statistics: $e');
-      return {'success': false, 'message': 'Failed to get statistics: $e'};
-    }
-  }
 }

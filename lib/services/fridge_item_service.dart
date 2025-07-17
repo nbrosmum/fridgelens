@@ -277,7 +277,7 @@ class FridgeItemService {
       // Calculate new status if expiry date is being updated
       String? newStatus = status;
       if (expiryDate != null) {
-        newStatus = _calculateStatus(expiryDate);
+        newStatus = _calculateStatus(expiryDate, reminderDate);
       }
 
       // Update the item
@@ -303,21 +303,20 @@ class FridgeItemService {
     }
   }
 
-  // Calculate status based on expiry date
-  String _calculateStatus(DateTime expiryDate) {
+  // Calculate status based on expiry date and reminder date
+  String _calculateStatus(DateTime expiryDate, [DateTime? reminderDate]) {
     final now = DateTime.now();
-    final difference = expiryDate.difference(now);
-
     // If the item has already expired (past the expiry date)
-    if (difference.isNegative) {
+    if (now.isAfter(expiryDate) || now.isAtSameMomentAs(expiryDate)) {
       return 'expired';
     }
-
-    // If the item expires within the next3s (including today)
-    if (difference.inDays <= 3) {
+    // Use reminderDate if provided，否则默认提前3天
+    final reminder =
+        reminderDate ?? expiryDate.subtract(const Duration(days: 3));
+    if ((now.isAfter(reminder) || now.isAtSameMomentAs(reminder)) &&
+        now.isBefore(expiryDate)) {
       return 'almost_expiry';
     }
-
     // Otherwise, the item is fresh
     return 'fresh';
   }
@@ -551,8 +550,18 @@ class FridgeItemService {
         final expiryDate = (itemData['expiryDate'] as Timestamp).toDate();
         final currentStatus = itemData['status'] as String;
 
+        // Fix reminderDate type conversion (handle both Timestamp and DateTime)
+        DateTime? reminderDate;
+        if (itemData['reminderDate'] != null) {
+          if (itemData['reminderDate'] is Timestamp) {
+            reminderDate = (itemData['reminderDate'] as Timestamp).toDate();
+          } else if (itemData['reminderDate'] is DateTime) {
+            reminderDate = itemData['reminderDate'] as DateTime;
+          }
+        }
+
         // Calculate new status
-        final newStatus = _calculateStatus(expiryDate);
+        final newStatus = _calculateStatus(expiryDate, reminderDate);
 
         // Only update if status has changed
         if (newStatus != currentStatus) {

@@ -79,7 +79,7 @@ class _MyAppState extends State<MyApp> {
     _fridgeItemService.updateAllItemsStatus();
 
     // Update status every 5 minutes
-    _statusUpdateTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
+    _statusUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _fridgeItemService.updateAllItemsStatus();
     });
   }
