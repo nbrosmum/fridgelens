@@ -905,8 +905,9 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
         ],
       ),
-      body: Center(
+      body: SingleChildScrollView(
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 30),
             CircleAvatar(
@@ -1046,6 +1047,7 @@ class _ProfileTabState extends State<ProfileTab> {
                 );
               },
             ),
+            const SizedBox(height: 30),
           ],
         ),
       ),
