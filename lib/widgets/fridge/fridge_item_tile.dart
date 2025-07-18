@@ -207,8 +207,7 @@ class FridgeItemTile extends StatelessWidget {
                       'PopupMenu selected: $value for item: ${item.name}, current status: ${item.status}',
                     );
                     print(
-                      'onStatusChange callback is null? ' +
-                          (onStatusChange == null).toString(),
+                      'onStatusChange callback is null? ${onStatusChange == null}',
                     );
                     if (value == 'delete' && onDelete != null) {
                       onDelete!();
@@ -222,12 +221,11 @@ class FridgeItemTile extends StatelessWidget {
                       print('onStatusChange called with expired');
                       onStatusChange!(item, value);
                     } else if (value == 'edit' && onEdit != null) {
-                      print('Edit option selected for item: ' + item.name);
+                      print('Edit option selected for item: ${item.name}');
                       onEdit!();
                     } else {
                       print(
-                        'No action taken for value: $value, onStatusChange is null: ' +
-                            (onStatusChange == null).toString(),
+                        'No action taken for value: $value, onStatusChange is null: ${onStatusChange == null}',
                       );
                     }
                   },

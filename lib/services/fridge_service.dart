@@ -350,11 +350,11 @@ class FridgeService {
 
       // Add authorization header
       request.headers['Authorization'] =
-          'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}';
+          'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}';
 
       // Add fields
       request.fields['fileName'] =
-          '${DateTime.now().millisecondsSinceEpoch}_history_${originalFileId}';
+          '${DateTime.now().millisecondsSinceEpoch}_history_$originalFileId';
       request.fields['folder'] = historyFolderPath;
 
       // Add file

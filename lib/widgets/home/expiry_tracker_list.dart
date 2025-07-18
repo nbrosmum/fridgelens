@@ -9,7 +9,7 @@ import '../../screens/fridge_detail_screen.dart';
 import 'package:async/async.dart';
 
 class ExpiryTrackerList extends StatelessWidget {
-  const ExpiryTrackerList({Key? key}) : super(key: key);
+  const ExpiryTrackerList({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -71,7 +71,7 @@ class FridgeItemService {
         url,
         headers: {
           'Authorization':
-              'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}',
+              'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}',
         },
       );
       return response.statusCode == 204;
@@ -388,7 +388,7 @@ class FridgeItemService {
     required String itemId,
     required String status,
   }) async {
-    print('updateItemStatus called: itemId=' + itemId + ', status=' + status);
+    print('updateItemStatus called: itemId=$itemId, status=$status');
     try {
       // Get the item first
       final itemDoc = await _firestore
@@ -471,7 +471,7 @@ class FridgeItemService {
 
         return {
           'success': true,
-          'message': 'Item marked as ' + status + ' and moved to history',
+          'message': 'Item marked as $status and moved to history',
         };
       } else if (status == 'expired') {
         // If status is 'expired', just update the status without moving to history
@@ -555,7 +555,7 @@ class FridgeItemService {
         final newStatus = _calculateStatus(expiryDate, reminderDate);
         //for debug
         print(
-          '[updateAllItemsStatus] item: ${doc.id}, now: ${DateTime.now()} reminderDate: ${reminderDate} expiryDate: ${expiryDate} currentStatus: ${currentStatus} newStatus: ${newStatus}',
+          '[updateAllItemsStatus] item: ${doc.id}, now: ${DateTime.now()} reminderDate: $reminderDate expiryDate: $expiryDate currentStatus: $currentStatus newStatus: $newStatus',
         );
 
         // Only update if status has changed

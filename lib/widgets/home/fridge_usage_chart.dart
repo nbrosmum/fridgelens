@@ -9,13 +9,13 @@ class FridgeUsageChart extends StatelessWidget {
   final List<String> xDates; // new: for tooltip date
 
   const FridgeUsageChart({
-    Key? key,
+    super.key,
     required this.usedSpots,
     required this.clearSpots,
     required this.filterLabel,
     required this.xLabels,
     this.xDates = const [], // optional, fallback to xLabels if not provided
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

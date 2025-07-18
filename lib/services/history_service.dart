@@ -169,7 +169,7 @@ class HistoryService {
         url,
         headers: {
           'Authorization':
-              'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}',
+              'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}',
         },
       );
       return response.statusCode == 204;
