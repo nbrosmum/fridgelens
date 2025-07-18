@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/shopping_item_model.dart';
 import '../../utils/constants.dart';
-import '../../utils/category_icons.dart';
 
 class ShoppingItemTile extends StatelessWidget {
   final ShoppingItem item;
@@ -19,9 +18,6 @@ class ShoppingItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categoryColor = CategoryIcons.getColorForCategory(item.category);
-    final categoryIcon = CategoryIcons.getIconForCategory(item.category);
-
     return Dismissible(
       key: Key(item.id),
       background: Container(
@@ -59,28 +55,46 @@ class ShoppingItemTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: item.imageUrl.isNotEmpty
-                    ? Image.network(
-                        item.imageUrl,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Image.asset(
-                              'assets/no_image.jpg',
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.cover,
-                            ),
-                      )
-                    : Image.asset(
-                        'assets/no_image.jpg',
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => Dialog(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: item.imageUrl.isNotEmpty
+                            ? Image.network(item.imageUrl, fit: BoxFit.contain)
+                            : Image.asset(
+                                'assets/no_image.jpg',
+                                fit: BoxFit.contain,
+                              ),
                       ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: item.imageUrl.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.asset(
+                                'assets/no_image.jpg',
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                              ),
+                        )
+                      : Image.asset(
+                          'assets/no_image.jpg',
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                        ),
+                ),
               ),
             ],
           ),
