@@ -550,6 +550,132 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
   final ShoppingService _shoppingService = ShoppingService();
   bool _showCompleted = true;
 
+  void _batchInsertToFridge(List<ShoppingItem> items) async {
+    // Show fridge selection dialog
+    final fridgeService = FridgeService();
+    final fridges = await fridgeService.getFridges().first;
+    String? selectedFridgeId;
+    FridgeModel? selectedFridge;
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Select Fridge'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: fridges.isEmpty
+              ? const Text('No fridges available.')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: fridges.length,
+                  itemBuilder: (context, index) {
+                    final fridge = fridges[index];
+                    const icon = Icons.kitchen;
+                    return Card(
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        leading: Icon(icon, color: AppColors.primary, size: 32),
+                        title: Text(
+                          fridge.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Type: ${fridge.type[0].toUpperCase()}${fridge.type.substring(1)}',
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                        onTap: () {
+                          selectedFridgeId = fridge.id;
+                          selectedFridge = fridge;
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+    if (selectedFridgeId == null || selectedFridge == null) return;
+    // Batch insert logic
+    final fridgeItemService = FridgeItemService();
+    int success = 0;
+    int fail = 0;
+    for (final item in items) {
+      String newImageUrl = '';
+      String newFileId = '';
+      if (item.imageUrl.isNotEmpty) {
+        try {
+          final response = await http.get(Uri.parse(item.imageUrl));
+          if (response.statusCode == 200) {
+            final tempDir = await Directory.systemTemp.createTemp(
+              'fridgelens_fridgeitem',
+            );
+            final tempFile = File('${tempDir.path}/temp_image.jpg');
+            await tempFile.writeAsBytes(response.bodyBytes);
+            final folderPath = '/fridge_items/$selectedFridgeId';
+            final uploadResult = await ImageKitHelper.uploadImageToImageKit(
+              tempFile,
+              folderPath,
+            );
+            await tempFile.delete();
+            await tempDir.delete();
+            if (uploadResult['success']) {
+              newImageUrl = uploadResult['url'];
+              newFileId = uploadResult['fileId'];
+            }
+          }
+        } catch (e) {
+          print('Image transfer error: $e');
+        }
+      }
+      final logic = getExpiryAndCompartment(
+        fridgeType: selectedFridge!.type,
+        category: item.category,
+      );
+      final result = await fridgeItemService.addFridgeItem(
+        fridgeId: selectedFridgeId!,
+        name: item.name,
+        category: item.category,
+        imageFile: null,
+        imageUrl: newImageUrl.isNotEmpty ? newImageUrl : null,
+        fileId: newFileId.isNotEmpty ? newFileId : null,
+        expiryDate: logic['expiryDate'],
+        reminderDate: logic['reminderDate'],
+        compartment: logic['compartment'],
+      );
+      if (result['success']) {
+        await _shoppingService.deleteShoppingItem(item.id);
+        // Delete original image from shopping folder
+        if (item.fileId.isNotEmpty) {
+          await ImageKitHelper.deleteImageFromImageKit(item.fileId);
+        }
+        success++;
+      } else {
+        fail++;
+      }
+    }
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Inserted $success item(s) to fridge. Failed: $fail'),
+          backgroundColor: success > 0 ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -573,6 +699,25 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
               color: AppColors.primary,
             ),
             tooltip: _showCompleted ? 'Hide Completed' : 'Show Completed',
+          ),
+          IconButton(
+            icon: const Icon(Icons.move_to_inbox, color: Colors.white),
+            tooltip: 'Insert All to Fridge',
+            onPressed: () async {
+              final allItems = await _shoppingService.getShoppingItems().first;
+              final completedFridgeItems = allItems
+                  .where((item) => item.isCompleted && item.isFridge)
+                  .toList();
+              if (completedFridgeItems.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('No completed fridge items to insert.'),
+                  ),
+                );
+                return;
+              }
+              _batchInsertToFridge(completedFridgeItems);
+            },
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -769,7 +914,6 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
                                         final fridge = fridges[index];
                                         // Always use kitchen icon and primary color
                                         const icon = Icons.kitchen;
-                                        final color = AppColors.primary;
                                         return Card(
                                           color: Colors.white,
                                           shape: RoundedRectangleBorder(
