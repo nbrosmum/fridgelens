@@ -117,17 +117,6 @@ class FridgeItemTile extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
-                    if (creatorLabel.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2.0),
-                        child: Text(
-                          'Created by: $creatorLabel',
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                      ),
                     const SizedBox(height: 4),
                     Row(
                       children: [

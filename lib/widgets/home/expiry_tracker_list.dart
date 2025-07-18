@@ -40,7 +40,7 @@ class ExpiryTrackerList extends StatelessWidget {
             ),
           );
         }
-        // 合并所有fridge的almost_expiry和expired item
+        // Merge all almost_expiry and expired items from all fridges
         return StreamBuilder<List<List<FridgeItemModel>>>(
           stream: StreamZip([
             ...fridges.map(
@@ -59,11 +59,14 @@ class ExpiryTrackerList extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             final allItems = itemSnapshot.data?.expand((x) => x).toList() ?? [];
-            // 只显示当前用户有权限的item
-            final filteredItems = allItems
-                .where((item) => item.createdBy == userId)
+            // Group items by status
+            final almostExpiryItems = allItems
+                .where((item) => item.status == 'almost_expiry')
                 .toList();
-            if (filteredItems.isEmpty) {
+            final expiredItems = allItems
+                .where((item) => item.status == 'expired')
+                .toList();
+            if (almostExpiryItems.isEmpty && expiredItems.isEmpty) {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                 child: Padding(
@@ -75,51 +78,108 @@ class ExpiryTrackerList extends StatelessWidget {
                 ),
               );
             }
+            Widget buildSection(
+              String title,
+              List<FridgeItemModel> items,
+              Color color,
+              IconData icon,
+            ) {
+              if (items.isEmpty) return const SizedBox();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    child: Row(
+                      children: [
+                        Icon(icon, color: color, size: 22),
+                        const SizedBox(width: 8),
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: items.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final fridge = fridges.firstWhere(
+                        (f) => f.id == item.fridgeId,
+                        orElse: () => FridgeModel(
+                          id: '',
+                          name: '',
+                          type: '',
+                          ownerId: '',
+                          contributors: [],
+                          createdAt: DateTime.now(),
+                        ),
+                      );
+                      return Card(
+                        elevation: 3,
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: FridgeItemTile(
+                          item: item,
+                          fridgeOwnerId: fridge.ownerId,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FridgeDetailScreen(
+                                  fridge: fridge,
+                                  initialFilter: item.status,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              );
+            }
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
                     'Expiry Tracker List',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: filteredItems.length,
-                  itemBuilder: (context, index) {
-                    final item = filteredItems[index];
-                    final fridge = fridges.firstWhere(
-                      (f) => f.id == item.fridgeId,
-                      orElse: () => FridgeModel(
-                        id: '',
-                        name: '',
-                        type: '',
-                        ownerId: '',
-                        contributors: [],
-                        createdAt: DateTime.now(),
-                      ),
-                    );
-                    return FridgeItemTile(
-                      item: item,
-                      fridgeOwnerId: fridge.ownerId,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => FridgeDetailScreen(
-                              fridge: fridge,
-                              initialFilter:
-                                  item.status, // 传递almost_expiry或expired
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+                buildSection(
+                  'Expired',
+                  expiredItems,
+                  Colors.red,
+                  Icons.warning_amber_rounded,
                 ),
+                if (expiredItems.isNotEmpty && almostExpiryItems.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    child: Divider(thickness: 1.2, height: 24),
+                  ),
+                buildSection(
+                  'Almost Expiry',
+                  almostExpiryItems,
+                  Colors.orange,
+                  Icons.access_time_rounded,
+                ),
+                const SizedBox(height: 16),
               ],
             );
           },
