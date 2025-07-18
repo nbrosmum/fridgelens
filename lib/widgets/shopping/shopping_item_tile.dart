@@ -59,13 +59,28 @@ class ShoppingItemTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: categoryColor.withAlpha(30),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(categoryIcon, color: categoryColor, size: 20),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: item.imageUrl.isNotEmpty
+                    ? Image.network(
+                        item.imageUrl,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Image.asset(
+                              'assets/no_image.jpg',
+                              width: 40,
+                              height: 40,
+                              fit: BoxFit.cover,
+                            ),
+                      )
+                    : Image.asset(
+                        'assets/no_image.jpg',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ],
           ),
@@ -97,18 +112,34 @@ class ShoppingItemTile extends StatelessWidget {
               ),
             ],
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.edit, size: 20),
-                onPressed: onEdit,
-                color: AppColors.secondary,
+          trailing: PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') {
+                onEdit();
+              } else if (value == 'delete') {
+                onDelete();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: const [
+                    Icon(Icons.edit, size: 18),
+                    SizedBox(width: 8),
+                    Text('Edit'),
+                  ],
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: onDelete,
-                color: Colors.red,
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: const [
+                    Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Delete'),
+                  ],
+                ),
               ),
             ],
           ),

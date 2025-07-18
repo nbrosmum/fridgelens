@@ -16,7 +16,7 @@ class ImageKitHelper {
         Uri.parse(ImageKitConfig.authenticationEndpoint),
       );
       request.headers['Authorization'] =
-          'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}';
+          'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}';
       request.fields['fileName'] =
           '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
       request.fields['folder'] = folderPath;

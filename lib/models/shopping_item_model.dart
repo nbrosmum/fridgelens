@@ -8,6 +8,8 @@ class ShoppingItem {
   final String category;
   final String userId;
   final DateTime createdAt;
+  final String imageUrl;
+  final String fileId;
 
   ShoppingItem({
     required this.id,
@@ -17,6 +19,8 @@ class ShoppingItem {
     required this.category,
     required this.userId,
     required this.createdAt,
+    this.imageUrl = '',
+    this.fileId = '',
   });
 
   // Create ShoppingItem from Firestore document
@@ -30,6 +34,8 @@ class ShoppingItem {
       category: data['category'] ?? 'Other',
       userId: data['userId'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
+      imageUrl: data['imageUrl'] ?? '',
+      fileId: data['fileId'] ?? '',
     );
   }
 
@@ -42,6 +48,8 @@ class ShoppingItem {
       'category': category,
       'userId': userId,
       'createdAt': Timestamp.fromDate(createdAt),
+      'imageUrl': imageUrl,
+      'fileId': fileId,
     };
   }
 
@@ -51,6 +59,8 @@ class ShoppingItem {
     int? quantity,
     bool? isCompleted,
     String? category,
+    String? imageUrl,
+    String? fileId,
   }) {
     return ShoppingItem(
       id: id,
@@ -60,6 +70,8 @@ class ShoppingItem {
       category: category ?? this.category,
       userId: userId,
       createdAt: createdAt,
+      imageUrl: imageUrl ?? this.imageUrl,
+      fileId: fileId ?? this.fileId,
     );
   }
 }

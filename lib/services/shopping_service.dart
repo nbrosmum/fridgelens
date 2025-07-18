@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/shopping_item_model.dart';
+import 'dart:io';
+import '../utils/imagekit_helper.dart';
 
 class ShoppingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -41,16 +43,34 @@ class ShoppingService {
     required String name,
     required int quantity,
     required String category,
+    File? imageFile,
   }) async {
     try {
       print(
         'Adding shopping item: $name, quantity: $quantity, category: $category',
       );
-      print('Current user ID: $_userId');
+      print('Current user ID:  [38;5;2m [1m [4m$_userId [0m');
 
       if (_userId == null) {
         print('Error: User not logged in');
         throw Exception('User not logged in');
+      }
+
+      // 上传图片到/shopping/userID
+      String imageUrl = '';
+      String fileId = '';
+      if (imageFile != null) {
+        final folderPath = '/shopping/$_userId';
+        final uploadResult = await ImageKitHelper.uploadImageToImageKit(
+          imageFile,
+          folderPath,
+        );
+        if (uploadResult['success']) {
+          imageUrl = uploadResult['url'];
+          fileId = uploadResult['fileId'] ?? '';
+        } else {
+          print('Image upload failed:  [31m${uploadResult['error']} [0m');
+        }
       }
 
       // Create the item data
@@ -61,6 +81,8 @@ class ShoppingService {
         'category': category,
         'userId': _userId,
         'createdAt': Timestamp.now(),
+        'imageUrl': imageUrl,
+        'fileId': fileId,
       };
 
       print('Item data to add: $itemData');
@@ -88,6 +110,14 @@ class ShoppingService {
 
   // Delete shopping item
   Future<void> deleteShoppingItem(String itemId) async {
+    final doc = await _shoppingCollection.doc(itemId).get();
+    if (doc.exists) {
+      final data = doc.data() as Map<String, dynamic>;
+      final fileId = data['fileId'] ?? '';
+      if (fileId.isNotEmpty) {
+        await ImageKitHelper.deleteImageFromImageKit(fileId);
+      }
+    }
     await _shoppingCollection.doc(itemId).delete();
   }
 

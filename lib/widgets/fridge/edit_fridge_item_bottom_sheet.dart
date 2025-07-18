@@ -5,7 +5,6 @@ import '../../services/fridge_item_service.dart';
 import 'package:intl/intl.dart';
 import '../../utils/constants.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
 
 class EditFridgeItemBottomSheet extends StatefulWidget {
   final FridgeItemModel item;
@@ -31,8 +30,7 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
   bool _isLoading = false;
   final FridgeItemService _fridgeItemService = FridgeItemService();
   File? _imageFile;
-  final ImagePicker _imagePicker = ImagePicker();
-  bool _removeImage = false;
+  final bool _removeImage = false;
   bool _isInitialized = false;
 
   final List<String> _categories = [
@@ -166,18 +164,6 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
     }
   }
 
-  Future<void> _pickImage({required ImageSource source}) async {
-    final XFile? picked = await _imagePicker.pickImage(
-      source: source,
-      imageQuality: 70,
-    );
-    if (picked != null) {
-      setState(() {
-        _imageFile = File(picked.path);
-      });
-    }
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
@@ -263,114 +249,30 @@ class _EditFridgeItemBottomSheetState extends State<EditFridgeItemBottomSheet> {
                         children: [
                           // Image selection area
                           Center(
-                            child: GestureDetector(
-                              onTap: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: (context) => SafeArea(
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        ListTile(
-                                          leading: const Icon(
-                                            Icons.photo_library,
-                                          ),
-                                          title: const Text(
-                                            'Choose from Gallery',
-                                          ),
-                                          onTap: () async {
-                                            Navigator.pop(context);
-                                            await _pickImage(
-                                              source: ImageSource.gallery,
-                                            );
-                                            setState(() {
-                                              _removeImage = false;
-                                            });
-                                          },
-                                        ),
-                                        ListTile(
-                                          leading: const Icon(Icons.camera_alt),
-                                          title: const Text('Take a Photo'),
-                                          onTap: () async {
-                                            Navigator.pop(context);
-                                            await _pickImage(
-                                              source: ImageSource.camera,
-                                            );
-                                            setState(() {
-                                              _removeImage = false;
-                                            });
-                                          },
-                                        ),
-                                        if (_imageFile != null ||
-                                            widget.item.imageUrl.isNotEmpty)
-                                          ListTile(
-                                            leading: const Icon(
-                                              Icons.delete,
-                                              color: Colors.red,
-                                            ),
-                                            title: const Text(
-                                              'Remove Photo',
-                                              style: TextStyle(
-                                                color: Colors.red,
-                                              ),
-                                            ),
-                                            onTap: () {
-                                              Navigator.pop(context);
-                                              setState(() {
-                                                _imageFile = null;
-                                                _removeImage = true;
-                                              });
-                                            },
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                width: 120,
-                                height: 120,
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[200],
-                                  borderRadius: BorderRadius.circular(10),
-                                  image: _imageFile != null
-                                      ? DecorationImage(
-                                          image: FileImage(_imageFile!),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : (widget.item.imageUrl.isNotEmpty &&
-                                                !_removeImage
-                                            ? DecorationImage(
-                                                image: NetworkImage(
-                                                  widget.item.imageUrl,
-                                                ),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : null),
-                                ),
-                                child:
-                                    (_imageFile == null &&
-                                        (widget.item.imageUrl.isEmpty ||
-                                            _removeImage))
-                                    ? Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: const [
-                                          Icon(
-                                            Icons.camera_alt,
-                                            size: 36,
-                                            color: Colors.grey,
-                                          ),
-                                          SizedBox(height: 8),
-                                          Text(
-                                            'Add Photo',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ],
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(10),
+                                image: _imageFile != null
+                                    ? DecorationImage(
+                                        image: FileImage(_imageFile!),
+                                        fit: BoxFit.cover,
                                       )
-                                    : null,
+                                    : (widget.item.imageUrl.isNotEmpty
+                                          ? DecorationImage(
+                                              image: NetworkImage(
+                                                widget.item.imageUrl,
+                                              ),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : DecorationImage(
+                                              image: AssetImage(
+                                                'assets/no_image.jpg',
+                                              ),
+                                              fit: BoxFit.cover,
+                                            )),
                               ),
                             ),
                           ),

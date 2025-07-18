@@ -640,10 +640,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
 
   Future<void> _updateItemStatus(FridgeItemModel item, String newStatus) async {
     print(
-      'Calling _updateItemStatus for item: ' +
-          item.name +
-          ', newStatus: ' +
-          newStatus,
+      'Calling _updateItemStatus for item: ${item.name}, newStatus: $newStatus',
     );
     try {
       final result = await _fridgeItemService.updateItemStatus(

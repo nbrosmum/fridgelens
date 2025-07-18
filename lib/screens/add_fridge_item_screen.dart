@@ -8,6 +8,7 @@ import '../models/fridge_model.dart';
 import '../utils/constants.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
+import '../widgets/common/image_picker_widget.dart';
 
 class AddFridgeItemScreen extends StatefulWidget {
   final String fridgeId;
@@ -33,7 +34,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
 
   final FridgeItemService _fridgeItemService = FridgeItemService();
   final FridgeService _fridgeService = FridgeService();
-  final ImagePicker _imagePicker = ImagePicker();
 
   final List<String> _categories = [
     'Vegetables',
@@ -321,41 +321,15 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Image picker
-              Center(
-                child: GestureDetector(
-                  onTap: _showImageSourceOptions,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(10),
-                      image: _imageFile != null
-                          ? DecorationImage(
-                              image: FileImage(_imageFile!),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    child: _imageFile == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(
-                                Icons.camera_alt,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Add Photo',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ],
-                          )
-                        : null,
-                  ),
-                ),
+              ImagePickerWidget(
+                initialImage: _imageFile,
+                onImagePicked: (file) {
+                  setState(() {
+                    _imageFile = file;
+                  });
+                },
+                addLabel: 'Add Photo',
+                size: 150,
               ),
               const SizedBox(height: 16),
               // Smart Insert Button
@@ -536,7 +510,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
               title: const Text('Choose from Gallery'),
               onTap: () async {
                 Navigator.pop(context);
-                final XFile? image = await _imagePicker.pickImage(
+                final XFile? image = await ImagePicker().pickImage(
                   source: ImageSource.gallery,
                   imageQuality: 70,
                 );
@@ -555,7 +529,7 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
               title: const Text('Take a Photo'),
               onTap: () async {
                 Navigator.pop(context);
-                final XFile? photo = await _imagePicker.pickImage(
+                final XFile? photo = await ImagePicker().pickImage(
                   source: ImageSource.camera,
                   imageQuality: 70,
                 );

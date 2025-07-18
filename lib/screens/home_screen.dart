@@ -317,8 +317,9 @@ class _HomeTabState extends State<HomeTab> {
                                   ),
                                 ],
                                 onChanged: (value) {
-                                  if (value != null)
+                                  if (value != null) {
                                     setState(() => _filter = value);
+                                  }
                                 },
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -762,12 +763,13 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddShoppingItemBottomSheet(
-        onAdd: (name, quantity, category) async {
+        onAdd: (name, quantity, category, {imageFile}) async {
           try {
             await _shoppingService.addShoppingItem(
               name: name,
               quantity: quantity,
               category: category,
+              imageFile: imageFile,
             );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -814,12 +816,14 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
         initialName: item.name,
         initialQuantity: item.quantity,
         initialCategory: item.category,
-        onAdd: (name, quantity, category) async {
+        initialImageUrl: item.imageUrl, // Pass the image URL here
+        onAdd: (name, quantity, category, {imageFile}) async {
           try {
             final updatedItem = item.copyWith(
               name: name,
               quantity: quantity,
               category: category,
+              // 暂不支持编辑图片
             );
             await _shoppingService.updateShoppingItem(updatedItem);
             if (mounted) {
