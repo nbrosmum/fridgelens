@@ -1,10 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
 import 'dart:io';
-import 'dart:convert';
 import '../models/fridge_item_model.dart';
 import '../utils/imagekit_config.dart';
+import '../utils/imagekit_helper.dart';
 import 'fridge_service.dart';
 
 class FridgeItemService {
@@ -16,69 +15,12 @@ class FridgeItemService {
   String? get currentUserId => _auth.currentUser?.uid;
 
   // Upload image to ImageKit
-  Future<Map<String, dynamic>> _uploadImageToImageKit(
-    File imageFile,
-    String folderPath,
-  ) async {
-    try {
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse(ImageKitConfig.authenticationEndpoint),
-      );
-
-      // Add authorization header
-      request.headers['Authorization'] =
-          'Basic ${base64Encode(utf8.encode(ImageKitConfig.privateKey + ':'))}';
-
-      // Add fields
-      request.fields['fileName'] =
-          '${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
-      request.fields['folder'] = folderPath;
-
-      // Add file
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
-      );
-
-      // Send request
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-
-      if (response.statusCode == 200) {
-        return {
-          'success': true,
-          'url': jsonResponse['url'],
-          'fileId': jsonResponse['fileId'],
-        };
-      } else {
-        return {
-          'success': false,
-          'error': jsonResponse['message'] ?? 'Upload failed',
-        };
-      }
-    } catch (e) {
-      return {'success': false, 'error': 'Upload error: $e'};
-    }
-  }
+  // (Replaced by ImageKitHelper.uploadImageToImageKit)
+  // Delete image from ImageKit.io remains unchanged
 
   // Delete image from ImageKit.io
   static Future<bool> deleteImageFromImageKit(String fileId) async {
-    try {
-      final url = Uri.parse('https://api.imagekit.io/v1/files/$fileId');
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization':
-              'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}',
-        },
-      );
-      return response.statusCode == 204;
-    } catch (e) {
-      print('Error deleting image from ImageKit: $e');
-      return false;
-    }
+    return await ImageKitHelper.deleteImageFromImageKit(fileId);
   }
 
   // Copy image to history folder when item is moved to history
@@ -86,48 +28,16 @@ class FridgeItemService {
     String originalFileId,
     String originalImageUrl,
   ) async {
-    try {
-      if (originalFileId.isEmpty || originalImageUrl.isEmpty) {
-        return null;
-      }
-
-      // Download the original image
-      final response = await http.get(Uri.parse(originalImageUrl));
-      if (response.statusCode != 200) {
-        print('Failed to download original image: ${response.statusCode}');
-        return null;
-      }
-
-      // Create a temporary file
-      final tempDir = await Directory.systemTemp.createTemp(
-        'fridgelens_history',
-      );
-      final tempFile = File('${tempDir.path}/temp_image.jpg');
-      await tempFile.writeAsBytes(response.bodyBytes);
-
-      // Upload to history folder
-      final historyFolderPath = '/history';
-      final uploadResult = await _uploadImageToImageKit(
-        tempFile,
-        historyFolderPath,
-      );
-
-      // Clean up temp file
-      await tempFile.delete();
-      await tempDir.delete();
-
-      if (uploadResult['success']) {
-        return {'url': uploadResult['url'], 'fileId': uploadResult['fileId']};
-      } else {
-        print(
-          'Failed to upload image to history folder: ${uploadResult['error']}',
-        );
-        return null;
-      }
-    } catch (e) {
-      print('Error copying image to history folder: $e');
+    final userId = currentUserId;
+    if (userId == null) {
+      print('No user ID found for history image upload.');
       return null;
     }
+    return await ImageKitHelper.copyImageToHistoryFolder(
+      originalFileId,
+      originalImageUrl,
+      userId,
+    );
   }
 
   // Add a new item to a fridge
@@ -158,9 +68,8 @@ class FridgeItemService {
         try {
           // Create a folder path for organization
           final folderPath = '${ImageKitConfig.uploadFolder}/$fridgeId';
-
-          // Upload to ImageKit
-          final uploadResult = await _uploadImageToImageKit(
+          // Upload to ImageKit using helper
+          final uploadResult = await ImageKitHelper.uploadImageToImageKit(
             imageFile,
             folderPath,
           );
@@ -249,9 +158,8 @@ class FridgeItemService {
         try {
           // Create a folder path for organization
           final folderPath = '${ImageKitConfig.uploadFolder}/$fridgeId';
-
-          // Upload to ImageKit
-          final uploadResult = await _uploadImageToImageKit(
+          // Upload to ImageKit using helper
+          final uploadResult = await ImageKitHelper.uploadImageToImageKit(
             newImageFile,
             folderPath,
           );

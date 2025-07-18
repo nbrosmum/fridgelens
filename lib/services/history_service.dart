@@ -1,11 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import '../models/history_item_model.dart';
 import '../models/fridge_item_model.dart';
 import 'fridge_service.dart';
-import '../utils/imagekit_config.dart';
+import '../utils/imagekit_helper.dart';
 
 class HistoryService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -163,19 +161,6 @@ class HistoryService {
 
   // Delete image from ImageKit.io
   Future<bool> _deleteImageFromImageKit(String fileId) async {
-    try {
-      final url = Uri.parse('https://api.imagekit.io/v1/files/$fileId');
-      final response = await http.delete(
-        url,
-        headers: {
-          'Authorization':
-              'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}',
-        },
-      );
-      return response.statusCode == 204;
-    } catch (e) {
-      print('Error deleting image from ImageKit: $e');
-      return false;
-    }
+    return await ImageKitHelper.deleteImageFromImageKit(fileId);
   }
 }

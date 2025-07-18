@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/fridge_model.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
 import '../utils/imagekit_config.dart';
-import 'fridge_item_service.dart';
+import '../utils/imagekit_helper.dart';
 
 class FridgeService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -151,7 +150,7 @@ class FridgeService {
         final fileId = itemData['fileId'];
         if (fileId != null && fileId.toString().isNotEmpty) {
           try {
-            await FridgeItemService.deleteImageFromImageKit(fileId);
+            await ImageKitHelper.deleteImageFromImageKit(fileId);
           } catch (e) {
             print('Error deleting image from ImageKit: $e');
           }
@@ -320,69 +319,16 @@ class FridgeService {
     String originalFileId,
     String originalImageUrl,
   ) async {
-    try {
-      if (originalFileId.isEmpty || originalImageUrl.isEmpty) {
-        return null;
-      }
-
-      // Download the original image
-      final response = await http.get(Uri.parse(originalImageUrl));
-      if (response.statusCode != 200) {
-        print('Failed to download original image: ${response.statusCode}');
-        return null;
-      }
-
-      // Create a temporary file
-      final tempDir = await Directory.systemTemp.createTemp(
-        'fridgelens_history',
-      );
-      final tempFile = File('${tempDir.path}/temp_image.jpg');
-      await tempFile.writeAsBytes(response.bodyBytes);
-
-      // Upload to history folder
-      final historyFolderPath = '/history';
-
-      // Create multipart request
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse(ImageKitConfig.authenticationEndpoint),
-      );
-
-      // Add authorization header
-      request.headers['Authorization'] =
-          'Basic ${base64Encode(utf8.encode('${ImageKitConfig.privateKey}:'))}';
-
-      // Add fields
-      request.fields['fileName'] =
-          '${DateTime.now().millisecondsSinceEpoch}_history_$originalFileId';
-      request.fields['folder'] = historyFolderPath;
-
-      // Add file
-      request.files.add(
-        await http.MultipartFile.fromPath('file', tempFile.path),
-      );
-
-      // Send request
-      var uploadResponse = await request.send();
-      var responseData = await uploadResponse.stream.bytesToString();
-      var jsonResponse = json.decode(responseData);
-
-      // Clean up temp file
-      await tempFile.delete();
-      await tempDir.delete();
-
-      if (uploadResponse.statusCode == 200) {
-        return {'url': jsonResponse['url'], 'fileId': jsonResponse['fileId']};
-      } else {
-        print(
-          'Failed to upload image to history folder: ${jsonResponse['message'] ?? 'Upload failed'}',
-        );
-        return null;
-      }
-    } catch (e) {
-      print('Error copying image to history folder: $e');
+    final userId = currentUserId;
+    if (userId == null) {
+      print('No user ID found for history image upload.');
       return null;
     }
+    return await ImageKitHelper.copyImageToHistoryFolder(
+      originalFileId,
+      originalImageUrl,
+      userId,
+    );
   }
 
   // Check if user has access to a fridge
