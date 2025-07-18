@@ -144,6 +144,7 @@ class ExpiryTrackerList extends StatelessWidget {
                               ),
                             );
                           },
+                          showCreator: false,
                         ),
                       );
                     },

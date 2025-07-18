@@ -10,6 +10,7 @@ class FridgeItemTile extends StatelessWidget {
   final Function(FridgeItemModel, String)? onStatusChange;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
+  final bool showCreator;
 
   const FridgeItemTile({
     super.key,
@@ -19,6 +20,7 @@ class FridgeItemTile extends StatelessWidget {
     this.onStatusChange,
     this.onDelete,
     this.onEdit,
+    this.showCreator = true,
   });
 
   @override
@@ -117,6 +119,17 @@ class FridgeItemTile extends StatelessWidget {
                         fontSize: 16,
                       ),
                     ),
+                    if (showCreator && creatorLabel.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2.0),
+                        child: Text(
+                          'Created by: $creatorLabel',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
