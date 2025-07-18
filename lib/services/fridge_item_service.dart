@@ -106,7 +106,7 @@ class FridgeItemService {
       await tempFile.writeAsBytes(response.bodyBytes);
 
       // Upload to history folder
-      final historyFolderPath = '${ImageKitConfig.uploadFolder}/history';
+      final historyFolderPath = '/history';
       final uploadResult = await _uploadImageToImageKit(
         tempFile,
         historyFolderPath,

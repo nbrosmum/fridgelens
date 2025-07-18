@@ -340,7 +340,7 @@ class FridgeService {
       await tempFile.writeAsBytes(response.bodyBytes);
 
       // Upload to history folder
-      final historyFolderPath = '${ImageKitConfig.uploadFolder}/history';
+      final historyFolderPath = '/history';
 
       // Create multipart request
       var request = http.MultipartRequest(
