@@ -44,6 +44,7 @@ class ShoppingService {
     required int quantity,
     required String category,
     File? imageFile,
+    bool isFridge = false,
   }) async {
     try {
       print(
@@ -83,6 +84,7 @@ class ShoppingService {
         'createdAt': Timestamp.now(),
         'imageUrl': imageUrl,
         'fileId': fileId,
+        'isFridge': isFridge,
       };
 
       print('Item data to add: $itemData');
@@ -132,6 +134,15 @@ class ShoppingService {
         .where('userId', isEqualTo: _userId)
         .where('isCompleted', isEqualTo: true)
         .get();
+
+    // Delete images from ImageKit for each completed item
+    for (var doc in completedItems.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      final fileId = data['fileId'] ?? '';
+      if (fileId.isNotEmpty) {
+        await ImageKitHelper.deleteImageFromImageKit(fileId);
+      }
+    }
 
     // Batch delete
     WriteBatch batch = _firestore.batch();

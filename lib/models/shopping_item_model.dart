@@ -10,6 +10,7 @@ class ShoppingItem {
   final DateTime createdAt;
   final String imageUrl;
   final String fileId;
+  final bool isFridge;
 
   ShoppingItem({
     required this.id,
@@ -21,6 +22,7 @@ class ShoppingItem {
     required this.createdAt,
     this.imageUrl = '',
     this.fileId = '',
+    this.isFridge = false,
   });
 
   // Create ShoppingItem from Firestore document
@@ -36,6 +38,7 @@ class ShoppingItem {
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       imageUrl: data['imageUrl'] ?? '',
       fileId: data['fileId'] ?? '',
+      isFridge: data['isFridge'] ?? false,
     );
   }
 
@@ -50,6 +53,7 @@ class ShoppingItem {
       'createdAt': Timestamp.fromDate(createdAt),
       'imageUrl': imageUrl,
       'fileId': fileId,
+      'isFridge': isFridge,
     };
   }
 
@@ -61,6 +65,7 @@ class ShoppingItem {
     String? category,
     String? imageUrl,
     String? fileId,
+    bool? isFridge,
   }) {
     return ShoppingItem(
       id: id,
@@ -72,6 +77,7 @@ class ShoppingItem {
       createdAt: createdAt,
       imageUrl: imageUrl ?? this.imageUrl,
       fileId: fileId ?? this.fileId,
+      isFridge: isFridge ?? this.isFridge,
     );
   }
 }

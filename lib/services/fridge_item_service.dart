@@ -45,7 +45,9 @@ class FridgeItemService {
     required String fridgeId,
     required String name,
     required String category,
-    required File? imageFile,
+    File? imageFile,
+    String? imageUrl,
+    String? fileId,
     required DateTime expiryDate,
     DateTime? reminderDate,
     String status = 'fresh',
@@ -61,22 +63,19 @@ class FridgeItemService {
         };
       }
 
-      // Upload image if provided
-      String imageUrl = '';
-      String fileId = '';
-      if (imageFile != null) {
+      String finalImageUrl = imageUrl ?? '';
+      String finalFileId = fileId ?? '';
+      // Upload image if provided and no imageUrl/fileId given
+      if (imageFile != null && (imageUrl == null || fileId == null)) {
         try {
-          // Create a folder path for organization
           final folderPath = '${ImageKitConfig.uploadFolder}/$fridgeId';
-          // Upload to ImageKit using helper
           final uploadResult = await ImageKitHelper.uploadImageToImageKit(
             imageFile,
             folderPath,
           );
-
           if (uploadResult['success']) {
-            imageUrl = uploadResult['url'];
-            fileId = uploadResult['fileId'];
+            finalImageUrl = uploadResult['url'];
+            finalFileId = uploadResult['fileId'];
           } else {
             print(
               'Error uploading image to ImageKit: ${uploadResult['error']}',
@@ -96,8 +95,8 @@ class FridgeItemService {
         'fridgeId': fridgeId,
         'name': name,
         'category': category,
-        'imageUrl': imageUrl,
-        'fileId': fileId,
+        'imageUrl': finalImageUrl,
+        'fileId': finalFileId,
         'expiryDate': expiryDate,
         'reminderDate': actualReminderDate,
         'status': status,

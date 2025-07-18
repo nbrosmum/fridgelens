@@ -7,13 +7,20 @@ import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 class AddShoppingItemBottomSheet extends StatefulWidget {
-  final Function(String name, int quantity, String category, {File? imageFile})
+  final Function(
+    String name,
+    int quantity,
+    String category, {
+    File? imageFile,
+    bool isFridge,
+  })
   onAdd;
   final String? initialName;
   final int? initialQuantity;
   final String? initialCategory;
   final String? initialImageUrl;
   final bool isEditing;
+  final bool? initialIsFridge;
 
   const AddShoppingItemBottomSheet({
     super.key,
@@ -23,6 +30,7 @@ class AddShoppingItemBottomSheet extends StatefulWidget {
     this.initialCategory,
     this.initialImageUrl,
     this.isEditing = false,
+    this.initialIsFridge,
   });
 
   @override
@@ -40,6 +48,7 @@ class _AddShoppingItemBottomSheetState
   bool _isLoading = false;
   Interpreter? _interpreter;
   List<String> _labels = [];
+  bool _isFridge = false;
 
   final List<String> _categories = [
     'Vegetables',
@@ -61,6 +70,12 @@ class _AddShoppingItemBottomSheetState
       text: (widget.initialQuantity ?? 1).toString(),
     );
     _selectedCategory = widget.initialCategory ?? 'Other';
+    // Set _isFridge to true if editing and the item is a fridge item
+    if (widget.isEditing && widget.initialIsFridge != null) {
+      _isFridge = widget.initialIsFridge!;
+    } else {
+      _isFridge = false;
+    }
   }
 
   Future<void> _loadModel(BuildContext context) async {
@@ -170,13 +185,20 @@ class _AddShoppingItemBottomSheetState
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-                Text(
-                  widget.isEditing ? 'Edit Shopping Item' : 'Add Shopping Item',
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.isEditing
+                          ? 'Edit Shopping Item'
+                          : 'Add Shopping Item',
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 // Image picker and display
@@ -400,6 +422,24 @@ class _AddShoppingItemBottomSheetState
                             },
                           ),
                           const SizedBox(height: 24),
+                          // Move isFridge checkbox here, below category
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _isFridge,
+                                onChanged: (val) {
+                                  setState(() {
+                                    _isFridge = val ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.primary,
+                              ),
+                              const Text(
+                                'Fridge Item',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -437,6 +477,7 @@ class _AddShoppingItemBottomSheetState
                                       int.parse(_quantityController.text),
                                       _selectedCategory,
                                       imageFile: _imageFile,
+                                      isFridge: _isFridge,
                                     );
                                     setState(() {
                                       _isLoading = false;

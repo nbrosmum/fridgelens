@@ -47,32 +47,6 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
     'Other',
   ];
 
-  // Default shelf life config
-  static const Map<String, Map<String, int>> defaultExpiryDays = {
-    'chiller': {
-      'Vegetables': 7,
-      'Fruits': 7,
-      'Dairy Products': 10,
-      'Meat & Poultry': 3,
-      'Bakery & Grains': 5,
-      'Drinks & Beverages': 14,
-      'Condiments & Sauces': 30,
-      'Frozen Food': 2,
-      'Other': 7,
-    },
-    'freezer': {
-      'Vegetables': 60,
-      'Fruits': 60,
-      'Dairy Products': 30,
-      'Meat & Poultry': 90,
-      'Bakery & Grains': 30,
-      'Drinks & Beverages': 60,
-      'Condiments & Sauces': 90,
-      'Frozen Food': 180,
-      'Other': 60,
-    },
-  };
-
   @override
   void initState() {
     super.initState();
@@ -296,13 +270,15 @@ class _AddFridgeItemScreenState extends State<AddFridgeItemScreen> {
   }
 
   void _updateExpiryByCategoryCompartment() {
-    final days = defaultExpiryDays[_selectedCompartment]?[_selectedCategory];
-    if (days != null) {
-      setState(() {
-        _expiryDate = DateTime.now().add(Duration(days: days));
-        _reminderDate = _expiryDate.subtract(const Duration(days: 1));
-      });
-    }
+    final logic = getExpiryAndCompartment(
+      fridgeType: _fridge?.type ?? 'chiller',
+      category: _selectedCategory,
+    );
+    setState(() {
+      _expiryDate = logic['expiryDate'];
+      _reminderDate = logic['reminderDate'];
+      _selectedCompartment = logic['compartment'];
+    });
   }
 
   @override

@@ -27,6 +27,9 @@ import '../services/fridge_item_service.dart';
 import '../models/fridge_model.dart';
 import '../models/fridge_item_model.dart';
 import '../widgets/home/expiry_tracker_list.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import '../utils/imagekit_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -696,6 +699,12 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
                       onToggle: (value) {
                         _shoppingService.toggleItemCompletion(item);
                       },
+                      onToggleIsFridge: (value) async {
+                        final updatedItem = item.copyWith(
+                          isFridge: value ?? false,
+                        );
+                        await _shoppingService.updateShoppingItem(updatedItem);
+                      },
                       onDelete: () async {
                         try {
                           await _shoppingService.deleteShoppingItem(item.id);
@@ -740,6 +749,155 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
                       onEdit: () {
                         _showEditItemDialog(item);
                       },
+                      onInsertToFridge: () async {
+                        final fridgeService = FridgeService();
+                        final fridges = await fridgeService.getFridges().first;
+                        String? selectedFridgeId;
+                        FridgeModel? selectedFridge;
+                        await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Select Fridge'),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              child: fridges.isEmpty
+                                  ? const Text('No fridges available.')
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: fridges.length,
+                                      itemBuilder: (context, index) {
+                                        final fridge = fridges[index];
+                                        // Always use kitchen icon and primary color
+                                        const icon = Icons.kitchen;
+                                        final color = AppColors.primary;
+                                        return Card(
+                                          color: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                            side: BorderSide(
+                                              color: AppColors.primary,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          margin: const EdgeInsets.symmetric(
+                                            vertical: 6,
+                                          ),
+                                          child: ListTile(
+                                            leading: Icon(
+                                              icon,
+                                              color: AppColors.primary,
+                                              size: 32,
+                                            ),
+                                            title: Text(
+                                              fridge.name,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                            subtitle: Text(
+                                              'Type: ${fridge.type[0].toUpperCase()}${fridge.type.substring(1)}',
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                            trailing: const Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 18,
+                                              color: Colors.grey,
+                                            ),
+                                            onTap: () {
+                                              selectedFridgeId = fridge.id;
+                                              selectedFridge = fridge;
+                                              Navigator.pop(context);
+                                            },
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ),
+                        );
+                        if (selectedFridgeId != null &&
+                            selectedFridge != null) {
+                          // 1. Download and re-upload image to fridge folder
+                          String newImageUrl = '';
+                          String newFileId = '';
+                          if (item.imageUrl.isNotEmpty) {
+                            try {
+                              final response = await http.get(
+                                Uri.parse(item.imageUrl),
+                              );
+                              if (response.statusCode == 200) {
+                                final tempDir = await Directory.systemTemp
+                                    .createTemp('fridgelens_fridgeitem');
+                                final tempFile = File(
+                                  '${tempDir.path}/temp_image.jpg',
+                                );
+                                await tempFile.writeAsBytes(response.bodyBytes);
+                                final folderPath =
+                                    '/fridge_items/$selectedFridgeId';
+                                final uploadResult =
+                                    await ImageKitHelper.uploadImageToImageKit(
+                                      tempFile,
+                                      folderPath,
+                                    );
+                                await tempFile.delete();
+                                await tempDir.delete();
+                                if (uploadResult['success']) {
+                                  newImageUrl = uploadResult['url'];
+                                  newFileId = uploadResult['fileId'];
+                                }
+                              }
+                            } catch (e) {
+                              print('Image transfer error: $e');
+                            }
+                          }
+                          // 2. Expiry/compartment logic
+                          final logic = getExpiryAndCompartment(
+                            fridgeType: selectedFridge!.type,
+                            category: item.category,
+                          );
+                          // 3. Add to fridge
+                          final fridgeItemService = FridgeItemService();
+                          final result = await fridgeItemService.addFridgeItem(
+                            fridgeId: selectedFridgeId!,
+                            name: item.name,
+                            category: item.category,
+                            imageFile: null, // Already uploaded
+                            imageUrl: newImageUrl.isNotEmpty
+                                ? newImageUrl
+                                : null,
+                            fileId: newFileId.isNotEmpty ? newFileId : null,
+                            expiryDate: logic['expiryDate'],
+                            reminderDate: logic['reminderDate'],
+                            compartment: logic['compartment'],
+                          );
+                          // 4. Delete from shopping list if success
+                          if (result['success']) {
+                            await _shoppingService.deleteShoppingItem(item.id);
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Inserted to fridge!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } else {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed: ${result['message']}'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -763,13 +921,14 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddShoppingItemBottomSheet(
-        onAdd: (name, quantity, category, {imageFile}) async {
+        onAdd: (name, quantity, category, {imageFile, isFridge = false}) async {
           try {
             await _shoppingService.addShoppingItem(
               name: name,
               quantity: quantity,
               category: category,
               imageFile: imageFile,
+              isFridge: isFridge,
             );
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -817,12 +976,14 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
         initialQuantity: item.quantity,
         initialCategory: item.category,
         initialImageUrl: item.imageUrl, // Pass the image URL here
-        onAdd: (name, quantity, category, {imageFile}) async {
+        initialIsFridge: item.isFridge,
+        onAdd: (name, quantity, category, {imageFile, isFridge = false}) async {
           try {
             final updatedItem = item.copyWith(
               name: name,
               quantity: quantity,
               category: category,
+              isFridge: isFridge,
               // 暂不支持编辑图片
             );
             await _shoppingService.updateShoppingItem(updatedItem);

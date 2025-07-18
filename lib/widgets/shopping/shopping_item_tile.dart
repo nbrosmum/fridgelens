@@ -7,6 +7,8 @@ class ShoppingItemTile extends StatelessWidget {
   final Function(bool?) onToggle;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
+  final Function(bool?) onToggleIsFridge;
+  final VoidCallback? onInsertToFridge;
 
   const ShoppingItemTile({
     super.key,
@@ -14,6 +16,8 @@ class ShoppingItemTile extends StatelessWidget {
     required this.onToggle,
     required this.onDelete,
     required this.onEdit,
+    required this.onToggleIsFridge,
+    this.onInsertToFridge,
   });
 
   @override
@@ -115,13 +119,21 @@ class ShoppingItemTile extends StatelessWidget {
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  'Qty: ${item.quantity}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
-                  ),
+                child: Row(
+                  children: [
+                    Text(
+                      'Qty:  ${item.quantity}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    if (item.isFridge) ...[
+                      const SizedBox(width: 6),
+                      Icon(Icons.kitchen, size: 16, color: Colors.blueAccent),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -132,30 +144,53 @@ class ShoppingItemTile extends StatelessWidget {
                 onEdit();
               } else if (value == 'delete') {
                 onDelete();
+              } else if (value == 'insert_to_fridge' &&
+                  onInsertToFridge != null) {
+                onInsertToFridge!();
               }
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'edit',
-                child: Row(
-                  children: const [
-                    Icon(Icons.edit, size: 18),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
+            itemBuilder: (context) {
+              final items = <PopupMenuEntry<String>>[
+                PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.edit, size: 18),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ],
+                  ),
                 ),
-              ),
-              PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: const [
-                    Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Delete'),
-                  ],
+                PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: const [
+                      Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Delete'),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ];
+              if (item.isCompleted &&
+                  item.isFridge &&
+                  onInsertToFridge != null) {
+                items.insert(
+                  0,
+                  PopupMenuItem(
+                    value: 'insert_to_fridge',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.move_to_inbox, size: 18, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text('Insert to Fridge'),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return items;
+            },
           ),
         ),
       ),
