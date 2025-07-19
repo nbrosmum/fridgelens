@@ -480,6 +480,10 @@ class FridgeItemService {
             itemName: itemName,
             status: 'almost_expired',
           );
+          await NotificationService().showLocalNotification(
+            'Item Almost Expired',
+            'Item "$itemName" is almost expired!',
+          );
           batch.update(doc.reference, {'notifiedAlmostExpired': true});
         }
         // Send notification for expired
@@ -488,6 +492,10 @@ class FridgeItemService {
             receiverId: receiverId,
             itemName: itemName,
             status: 'expired',
+          );
+          await NotificationService().showLocalNotification(
+            'Item Expired',
+            'Item "$itemName" has expired!',
           );
           batch.update(doc.reference, {'notifiedExpired': true});
         }

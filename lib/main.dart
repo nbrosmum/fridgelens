@@ -16,12 +16,14 @@ import 'screens/add_fridge_screen.dart';
 import 'utils/constants.dart';
 import 'services/auth_service.dart';
 import 'services/fridge_item_service.dart';
+import 'services/notification_service.dart';
 
 // Global instance of AuthService for persistence
 final AuthService authService = AuthService();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initializeLocalNotifications();
 
   try {
     // Initialize Firebase
@@ -35,9 +37,6 @@ void main() async {
       persistenceEnabled: true,
       cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
-
-    // Disable offline persistence for friend requests to prevent cache issues
-    // This will be handled manually in the friend service
 
     // Initialize auth service after Firebase
     print(
