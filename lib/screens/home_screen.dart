@@ -1128,7 +1128,7 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
               quantity: quantity,
               category: category,
               isFridge: isFridge,
-              // 暂不支持编辑图片
+              // Image editing not supported yet
             );
             await _shoppingService.updateShoppingItem(updatedItem);
             if (mounted) {

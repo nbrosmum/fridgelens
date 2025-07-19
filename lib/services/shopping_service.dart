@@ -57,7 +57,7 @@ class ShoppingService {
         throw Exception('User not logged in');
       }
 
-      // 上传图片到/shopping/userID
+      // Upload image to /shopping/userID
       String imageUrl = '';
       String fileId = '';
       if (imageFile != null) {
