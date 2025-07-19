@@ -9,7 +9,6 @@ import '../widgets/shopping/shopping_item_tile.dart';
 import '../widgets/shopping/empty_shopping_list.dart';
 import '../models/shopping_item_model.dart';
 import 'change_password_screen.dart';
-import 'settings_screen.dart';
 import 'fridge_list_screen.dart';
 import 'friend_list_screen.dart';
 import 'notification_screen.dart';
@@ -1417,19 +1416,6 @@ class _ProfileTabState extends State<ProfileTab> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ChangePasswordScreen(),
-                  ),
-                );
-              },
-            ),
-            _buildProfileOption(
-              context,
-              Icons.settings_outlined,
-              'Settings',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
                   ),
                 );
               },

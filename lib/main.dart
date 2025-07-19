@@ -9,7 +9,6 @@ import 'screens/register_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/edit_profile_screen.dart';
-import 'screens/settings_screen.dart';
 import 'screens/friend_list_screen.dart';
 
 import 'screens/fridge_list_screen.dart';
@@ -107,7 +106,6 @@ class _MyAppState extends State<MyApp> {
         '/forgot_password': (context) => const ForgotPasswordScreen(),
         '/change_password': (context) => const ChangePasswordScreen(),
         '/edit_profile': (context) => const EditProfileScreen(),
-        '/settings': (context) => const SettingsScreen(),
         '/friends': (context) => const FriendListScreen(),
 
         '/fridges': (context) => const FridgeListScreen(),

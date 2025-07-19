@@ -12,6 +12,7 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
+  bool _showAll = false; // New: toggle to show all or only unread
 
   @override
   Widget build(BuildContext context) {
@@ -21,6 +22,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
         foregroundColor: Colors.white,
         title: const Text('Notifications'),
         actions: [
+          IconButton(
+            icon: Icon(
+              _showAll ? Icons.mark_email_unread : Icons.mark_email_read,
+            ),
+            tooltip: _showAll ? 'Show Unread Only' : 'Show All',
+            onPressed: () {
+              setState(() {
+                _showAll = !_showAll;
+              });
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.done_all),
             onPressed: () async {
@@ -39,14 +51,16 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ],
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: _notificationService.getNotifications(),
+        stream: _showAll
+            ? _notificationService.getAllNotifications()
+            : _notificationService.getNotifications(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error:  {snapshot.error}'));
           }
 
           final notifications = snapshot.data ?? [];
@@ -172,6 +186,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 case 'mark_read':
                   await _notificationService.markAsRead(notification['id']);
                   break;
+                case 'mark_unread':
+                  await _notificationService.markAsUnread(notification['id']);
+                  break;
                 case 'delete':
                   await _notificationService.deleteNotification(
                     notification['id'],
@@ -193,6 +210,17 @@ class _NotificationScreenState extends State<NotificationScreen> {
                       Icon(Icons.check, color: Colors.green),
                       SizedBox(width: 8),
                       Text('Mark as read'),
+                    ],
+                  ),
+                ),
+              if (isRead)
+                const PopupMenuItem<String>(
+                  value: 'mark_unread',
+                  child: Row(
+                    children: [
+                      Icon(Icons.undo, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Mark as unread'),
                     ],
                   ),
                 ),

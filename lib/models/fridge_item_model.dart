@@ -12,6 +12,9 @@ class FridgeItemModel {
   final String createdBy; // User ID who added this item
   final DateTime createdAt;
   final String compartment; // "freezer" or "chiller"
+  final bool
+  notifiedAlmostExpired; // New: whether almost expired notification sent
+  final bool notifiedExpired; // New: whether expired notification sent
 
   FridgeItemModel({
     required this.id,
@@ -25,6 +28,8 @@ class FridgeItemModel {
     required this.createdBy,
     required this.createdAt,
     required this.compartment,
+    this.notifiedAlmostExpired = false,
+    this.notifiedExpired = false,
   });
 
   factory FridgeItemModel.fromMap(Map<String, dynamic> map, String id) {
@@ -40,6 +45,8 @@ class FridgeItemModel {
       createdBy: map['createdBy'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       compartment: map['compartment'] ?? 'chiller',
+      notifiedAlmostExpired: map['notifiedAlmostExpired'] ?? false,
+      notifiedExpired: map['notifiedExpired'] ?? false,
     );
   }
 
@@ -55,6 +62,8 @@ class FridgeItemModel {
       'createdBy': createdBy,
       'createdAt': createdAt,
       'compartment': compartment,
+      'notifiedAlmostExpired': notifiedAlmostExpired,
+      'notifiedExpired': notifiedExpired,
     };
   }
 
@@ -68,6 +77,8 @@ class FridgeItemModel {
     String? status,
     String? createdBy,
     String? compartment,
+    bool? notifiedAlmostExpired,
+    bool? notifiedExpired,
   }) {
     return FridgeItemModel(
       id: id,
@@ -81,6 +92,9 @@ class FridgeItemModel {
       createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt,
       compartment: compartment ?? this.compartment,
+      notifiedAlmostExpired:
+          notifiedAlmostExpired ?? this.notifiedAlmostExpired,
+      notifiedExpired: notifiedExpired ?? this.notifiedExpired,
     );
   }
 }

@@ -5,6 +5,7 @@ import '../models/fridge_item_model.dart';
 import '../utils/imagekit_config.dart';
 import '../utils/imagekit_helper.dart';
 import 'fridge_service.dart';
+import '../services/notification_service.dart';
 
 class FridgeItemService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -447,7 +448,9 @@ class FridgeItemService {
         final itemData = doc.data();
         final expiryDate = (itemData['expiryDate'] as Timestamp).toDate();
         final currentStatus = itemData['status'] as String;
-
+        final itemId = doc.id;
+        final itemName = itemData['name'] ?? '';
+        final receiverId = itemData['createdBy'] ?? '';
         // Fix reminderDate type conversion (handle both Timestamp and DateTime)
         DateTime? reminderDate;
         if (itemData['reminderDate'] != null) {
@@ -457,25 +460,45 @@ class FridgeItemService {
             reminderDate = itemData['reminderDate'] as DateTime;
           }
         }
-
+        final notifiedAlmostExpired =
+            itemData['notifiedAlmostExpired'] ?? false;
+        final notifiedExpired = itemData['notifiedExpired'] ?? false;
         // Calculate new status
         final newStatus = _calculateStatus(expiryDate, reminderDate);
-        //for debug
         print(
-          '[updateAllItemsStatus] item: ${doc.id}, now: ${DateTime.now()} reminderDate: $reminderDate expiryDate: $expiryDate currentStatus: $currentStatus newStatus: $newStatus',
+          '[updateAllItemsStatus] item: $itemId, now: ${DateTime.now()} reminderDate: $reminderDate expiryDate: $expiryDate currentStatus: $currentStatus newStatus: $newStatus',
         );
-
         // Only update if status has changed
         if (newStatus != currentStatus) {
           batch.update(doc.reference, {'status': newStatus});
           updatedCount++;
         }
+        // Send notification for almost expired
+        if (newStatus == 'almost_expiry' && !notifiedAlmostExpired) {
+          await NotificationService().createItemStatusNotification(
+            receiverId: receiverId,
+            itemName: itemName,
+            status: 'almost_expired',
+          );
+          batch.update(doc.reference, {'notifiedAlmostExpired': true});
+        }
+        // Send notification for expired
+        if (newStatus == 'expired' && !notifiedExpired) {
+          await NotificationService().createItemStatusNotification(
+            receiverId: receiverId,
+            itemName: itemName,
+            status: 'expired',
+          );
+          batch.update(doc.reference, {'notifiedExpired': true});
+        }
       }
-
       // Commit the batch update
       if (updatedCount > 0) {
         await batch.commit();
         print('Updated status for $updatedCount items');
+      } else {
+        // If only notification fields updated, still commit
+        await batch.commit();
       }
     } catch (e) {
       print('Error updating items status: $e');
