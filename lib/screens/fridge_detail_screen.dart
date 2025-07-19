@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import '../models/fridge_model.dart';
 import '../models/fridge_item_model.dart';
 import '../models/user_model.dart';
@@ -11,6 +13,8 @@ import '../widgets/fridge/add_contributor_dialog.dart';
 import 'add_fridge_item_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/fridge/edit_fridge_item_bottom_sheet.dart';
+import '../widgets/fridge/restock_dialog.dart';
+import '../services/shopping_service.dart';
 import 'package:intl/intl.dart';
 
 class FridgeDetailScreen extends StatefulWidget {
@@ -32,6 +36,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
   late TabController _tabController;
   final FridgeItemService _fridgeItemService = FridgeItemService();
   final FridgeService _fridgeService = FridgeService();
+  final ShoppingService _shoppingService = ShoppingService();
   final String? _currentUserId = FirebaseAuth.instance.currentUser?.uid;
   String _selectedFilter = 'all';
   bool _freezerExpanded = true;
@@ -642,29 +647,124 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
     print(
       'Calling _updateItemStatus for item: ${item.name}, newStatus: $newStatus',
     );
-    try {
-      final result = await _fridgeItemService.updateItemStatus(
-        itemId: item.id,
-        status: newStatus,
+
+    // Show restock dialog for 'used' and 'clear' actions
+    if (newStatus == 'used' || newStatus == 'clear') {
+      final dialogResult = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (context) => RestockDialog(item: item, action: newStatus),
       );
 
-      if (mounted && !result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (dialogResult != null) {
+        final bool addToShoppingList =
+            dialogResult['addToShoppingList'] ?? false;
+        final int quantity = dialogResult['quantity'] ?? 1;
+
+        try {
+          // Update item status first (this will also add to history automatically)
+          final statusResult = await _fridgeItemService.updateItemStatus(
+            itemId: item.id,
+            status: newStatus,
+          );
+
+          if (!statusResult['success']) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(statusResult['message']),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+
+          // If user wants to add to shopping list
+          if (addToShoppingList) {
+            await _addToShoppingList(item, quantity);
+          }
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  addToShoppingList
+                      ? 'Item ${newStatus == 'used' ? 'used' : 'cleared'} and added to shopping list'
+                      : 'Item ${newStatus == 'used' ? 'used' : 'cleared'}',
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error updating item status: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
+    } else {
+      // For other status changes (like 'expired'), proceed normally
+      try {
+        final result = await _fridgeItemService.updateItemStatus(
+          itemId: item.id,
+          status: newStatus,
+        );
+
+        if (mounted && !result['success']) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message']),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error updating item status: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _addToShoppingList(FridgeItemModel item, int quantity) async {
+    try {
+      // Copy image to shopping folder if it exists
+      File? imageFile;
+
+      if (item.imageUrl.isNotEmpty) {
+        // Download the image and create a temporary file
+        final response = await http.get(Uri.parse(item.imageUrl));
+        if (response.statusCode == 200) {
+          final tempDir = await Directory.systemTemp.createTemp(
+            'fridgelens_shopping',
+          );
+          final tempFile = File('${tempDir.path}/temp_image.jpg');
+          await tempFile.writeAsBytes(response.bodyBytes);
+          imageFile = tempFile;
+        }
+      }
+
+      // Add to shopping list
+      await _shoppingService.addShoppingItem(
+        name: item.name,
+        quantity: quantity,
+        category: item.category,
+        imageFile: imageFile,
+        isFridge: true,
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating item status: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      print('Error adding item to shopping list: $e');
+      // Don't show error to user as the main action (status update) was successful
     }
   }
 
