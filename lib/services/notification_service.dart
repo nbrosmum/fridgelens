@@ -17,6 +17,19 @@ class NotificationService {
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+    // Force create high-priority notification channel to ensure lock screen pop-up
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'fridge_status_channel',
+      'Fridge Status',
+      description: 'Notifications for fridge item status updates',
+      importance: Importance.max,
+    );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.createNotificationChannel(channel);
   }
 
   Future<void> showLocalNotification(String title, String body) async {
