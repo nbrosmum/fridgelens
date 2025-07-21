@@ -114,7 +114,6 @@ class _AddContributorDialogState extends State<AddContributorDialog> {
 
                   return CheckboxListTile(
                     title: Text(friend.displayName ?? 'User'),
-                    subtitle: Text(friend.email),
                     value: isSelected,
                     onChanged: (bool? value) {
                       setState(() {

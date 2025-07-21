@@ -190,12 +190,39 @@ class FridgeItemTile extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Expires: ${DateFormat('yyyy-MM-dd HH:mm').format(item.expiryDate)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: difference < 0 ? Colors.red : Colors.grey[600],
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Expires:',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat(
+                                'yyyy-MM-dd HH:mm',
+                              ).format(item.expiryDate),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: difference < 0
+                                    ? Colors.red
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),

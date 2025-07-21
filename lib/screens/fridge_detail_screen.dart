@@ -591,13 +591,15 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
             const SizedBox(height: 16),
             _buildItemDetail('Category', item.category),
             _buildItemDetail('Status', item.status),
-            _buildItemDetail(
-              'Expiry Date',
-              DateFormat('yyyy-MM-dd HH:mm').format(item.expiryDate),
+            _buildItemDetailRow(
+              icon: Icons.calendar_today,
+              label: 'Expiry Date',
+              value: DateFormat('yyyy-MM-dd HH:mm').format(item.expiryDate),
             ),
-            _buildItemDetail(
-              'Reminder Date',
-              DateFormat('yyyy-MM-dd HH:mm').format(item.reminderDate),
+            _buildItemDetailRow(
+              icon: Icons.notifications,
+              label: 'Reminder Date',
+              value: DateFormat('yyyy-MM-dd HH:mm').format(item.reminderDate),
             ),
             FutureBuilder<UserModel?>(
               future: AuthService().getUserDataById(item.createdBy),
@@ -638,6 +640,34 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
         children: [
           Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemDetailRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label:', style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.grey[600]),
+              const SizedBox(width: 6),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ],
       ),
     );
