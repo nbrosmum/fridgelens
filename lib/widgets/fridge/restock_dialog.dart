@@ -129,7 +129,7 @@ class _RestockDialogState extends State<RestockDialog> {
             backgroundColor: AppColors.primary,
             foregroundColor: Colors.white,
           ),
-          child: const Text('Yes, Add to Shopping List'),
+          child: const Text('Yes'),
         ),
       ],
     );
