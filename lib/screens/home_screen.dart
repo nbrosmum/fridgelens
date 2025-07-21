@@ -1053,7 +1053,7 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
         onPressed: _showAddItemDialog,
         backgroundColor: AppColors.primary,
         heroTag: 'shoppingAddBtn',
-        child: const Icon(Icons.add_shopping_cart),
+        child: const Icon(Icons.add_shopping_cart, color: Colors.white),
       ),
     );
   }

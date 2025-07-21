@@ -88,6 +88,7 @@ class _MyAppState extends State<MyApp> {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        fontFamily: 'OpenSans',
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           primary: AppColors.primary,

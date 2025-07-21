@@ -125,7 +125,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
                 );
               },
               backgroundColor: AppColors.primary,
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
     );

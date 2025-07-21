@@ -171,7 +171,7 @@ class _FridgeListScreenState extends State<FridgeListScreen> {
           );
         },
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
