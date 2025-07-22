@@ -47,6 +47,8 @@ service cloud.firestore {
       );
       allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
       allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Allow any authenticated user to delete fridges (student project, permissive)
+      allow delete: if request.auth != null;
     }
     
     // Fridge items rules
@@ -59,6 +61,8 @@ service cloud.firestore {
     // History items rules
     match /history_items/{itemId} {
       allow write, read: if true;
+      // Allow any authenticated user to delete history items (student project, permissive)
+      allow delete: if request.auth != null;
     }
     
     // Test collection - allow access for testing purposes
