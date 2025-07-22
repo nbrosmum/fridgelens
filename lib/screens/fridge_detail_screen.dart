@@ -380,6 +380,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
           Text(
             'Add items to start tracking',
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
