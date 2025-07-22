@@ -870,6 +870,10 @@ class _ShoppingListTabState extends State<ShoppingListTab> {
                                     name: item.name,
                                     quantity: item.quantity,
                                     category: item.category,
+                                    imageFile: null,
+                                    isFridge: item.isFridge,
+                                    imageUrl: item.imageUrl,
+                                    fileId: item.fileId,
                                   );
                                 },
                               ),

@@ -45,6 +45,8 @@ class ShoppingService {
     required String category,
     File? imageFile,
     bool isFridge = false,
+    String? imageUrl, // new
+    String? fileId, // new
   }) async {
     try {
       print(
@@ -58,17 +60,17 @@ class ShoppingService {
       }
 
       // Upload image to /shopping/userID
-      String imageUrl = '';
-      String fileId = '';
-      if (imageFile != null) {
+      String finalImageUrl = imageUrl ?? '';
+      String finalFileId = fileId ?? '';
+      if (imageFile != null && (imageUrl == null || fileId == null)) {
         final folderPath = '/shopping/$_userId';
         final uploadResult = await ImageKitHelper.uploadImageToImageKit(
           imageFile,
           folderPath,
         );
         if (uploadResult['success']) {
-          imageUrl = uploadResult['url'];
-          fileId = uploadResult['fileId'] ?? '';
+          finalImageUrl = uploadResult['url'];
+          finalFileId = uploadResult['fileId'] ?? '';
         } else {
           print('Image upload failed:  [31m${uploadResult['error']} [0m');
         }
@@ -82,8 +84,8 @@ class ShoppingService {
         'category': category,
         'userId': _userId,
         'createdAt': Timestamp.now(),
-        'imageUrl': imageUrl,
-        'fileId': fileId,
+        'imageUrl': finalImageUrl,
+        'fileId': finalFileId,
         'isFridge': isFridge,
       };
 
