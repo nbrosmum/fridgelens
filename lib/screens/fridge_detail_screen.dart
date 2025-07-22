@@ -184,6 +184,7 @@ class _FridgeDetailScreenState extends State<FridgeDetailScreen>
                       ? 'Add items to keep track of your fridge contents'
                       : 'Try a different filter',
                   style: const TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
                 ),
                 if (_selectedFilter == 'all')
                   Padding(
