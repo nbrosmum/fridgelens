@@ -146,18 +146,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
         ),
         title: Text(
           item.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
                 const SizedBox(width: 4),
-                Text(
-                  DateFormat('MMM d, yyyy HH:mm').format(item.usedAt),
-                  style: TextStyle(color: Colors.grey[600]),
+                Expanded(
+                  child: Text(
+                    DateFormat('MMM d, yyyy HH:mm').format(item.usedAt),
+                    style: TextStyle(color: Colors.grey[600]),
+                    softWrap: true,
+                    maxLines: 2,
+                  ),
                 ),
               ],
             ),
@@ -172,11 +179,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   color: item.status == 'clear' ? Colors.blue : Colors.green,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  item.status == 'clear' ? 'Cleared' : 'Used',
-                  style: TextStyle(
-                    color: item.status == 'clear' ? Colors.blue : Colors.green,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    item.status == 'clear' ? 'Cleared' : 'Used',
+                    style: TextStyle(
+                      color: item.status == 'clear'
+                          ? Colors.blue
+                          : Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
                   ),
                 ),
               ],
